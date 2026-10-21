@@ -5,3 +5,9 @@ todo.md
 skills-lock.json
 node_modules/
 dist/
+.gradle/
+build/
+android/.gradle/
+android/app/build/
+android/local.properties
+
