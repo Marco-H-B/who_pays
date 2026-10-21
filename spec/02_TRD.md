@@ -48,6 +48,17 @@ $$m \frac{d^2x}{dt^2} + c \frac{dx}{dt} + kx = 0$$
 - $c = 14.0$ (Coeficiente de amortiguamiento crítico para evitar rebote excesivo).
 - $k = 180.0$ (Constante elástica que simula la tensión del titanio al expandirse).
 
+#### 2.1.1. Invarianza de Tasa de Refresco ($\Delta t$ Delta Time en 60Hz, 90Hz, 120Hz)
+- **Problema de Ingeniería:** Los dispositivos tienen frecuencias de refresco heterogéneas:
+  - iPhone 15: **60 Hz** (16.66 ms / frame).
+  - Android Gama Media: **90 Hz** (11.11 ms / frame).
+  - iPhone Pro / Android Flagship: **120 Hz** (8.33 ms / frame).
+- **Regla Estricta Anti-Aceleración:** Está terminantemente prohibido avanzar la física por número de fotogramas (`frame++`).
+- **Solución con Tiempo Monótono:** La física y el temporizador de 3.0s se calculan analíticamente en función del tiempo real continuo medido por relojes de hardware monótonos (`ContinuousClock` en Swift / `SystemClock.elapsedRealtimeNanos()` en Kotlin / `performance.now()` en Web):
+  $$\Delta t = t_{\text{actual}} - t_{\text{anterior}}$$
+  $$\text{Progreso}(t) = \min\left(\frac{t - t_{\text{inicio}}}{3.000\text{ s}}, 1.0\right)$$
+- De esta manera, el aro se renderiza a la máxima suavidad nativa de cada pantalla (60, 90 o 120 FPS), pero **la tensión dura con precisión atómica exactamente 3.000 segundos en todos los dispositivos**.
+
 ### 2.2. Generador Pseudoaleatorio Criptográficamente Seguro (CSPRNG) (`CM1H2`)
 
 - Se prohíbe el uso de `Math.random()` convencional (predecible por congruencia lineal).

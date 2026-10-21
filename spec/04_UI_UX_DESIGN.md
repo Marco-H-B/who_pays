@@ -71,11 +71,16 @@ Un pilar maestro que rige el diseño de WHO PAYS? es **La Ilusión del Trabajo**
 - **Botones de Pago:** Integración nativa de Apple Pay (en iOS vía StoreKit) y Google Pay / Yape en 1 solo toque.
 - **Expiración Fluida:** Si el cronómetro llega a `00:00`, el modal transiciona elegantemente a un estado de sesión expirada con opción de reintentar.
 
-### 4.3. Renderizado Nativo a 60 FPS (iPhone 15) & Adaptativo a 120 FPS (ProMotion)
+### 4.3. Renderizado Nativo Multi-Frecuencia (60 Hz iPhone 15 / 90 Hz / 120 Hz ProMotion)
 
 - **Hardware Principal de Referencia (iPhone 15):** Pantalla Super Retina XDR a 60 Hz nativos (presupuesto de 16.6ms por cuadro). Cero pausas de renderizado y control háptico milimétrico con el Taptic Engine (`CoreHaptics`).
-- **iOS:** Implementado en **SwiftUI** con `Canvas` y aceleración de hardware Metal, con soporte adaptativo a 120Hz para modelos Pro/ProMotion.
-- **Android:** Implementado en **Jetpack Compose** con `Canvas` nativo a 60/120Hz y modulación háptica vía `VibrationEffect`.
+- **Soporte Multi-Frecuencia Desacoplado ($\Delta t$):**
+  - Dispositivos 60 Hz (iPhone 15, Android estándar): Renderizado fluido a 60 FPS.
+  - Dispositivos 90 Hz (Android gama media): Renderizado a 90 FPS.
+  - Dispositivos 120 Hz (iPhone Pro / iPads / Android LTPO): Renderizado dinámico ProMotion a 120 FPS.
+  - **Invarianza Temporal:** Todas las animaciones, aros y física utilizan el tiempo continuo ($\Delta t$), garantizando que la experiencia dure exactamente 3.0 segundos en cualquier pantalla sin acelerarse ni ralentizarse.
+- **iOS:** Implementado en **SwiftUI** con `TimelineView(.animation)` o `Canvas` acelerado por Metal.
+- **Android:** Implementado en **Jetpack Compose** con `Canvas` y `withFrameNanos`.
 
 ---
 
