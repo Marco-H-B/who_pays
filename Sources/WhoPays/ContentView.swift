@@ -6,19 +6,19 @@
 import SwiftUI
 import UIKit
 
-// ------------------------------------------------------------------------------
+// ---------------------------------------------------------------------
 // Modelo de Punto Táctil
 // Representa la coordenada y estado de cada dedo detectado en pantalla
-// ------------------------------------------------------------------------------
+// ---------------------------------------------------------------------
 struct TouchPoint: Identifiable {
     let id: UUID
     var location: CGPoint
     var startTime: Date
 }
 
-// ------------------------------------------------------------------------------
+// -------------------------------------
 // Máquina de Estados Finitos del Juego
-// ------------------------------------------------------------------------------
+// -------------------------------------
 enum GameState: Equatable {
     case idle
     case tension(startDate: Date)
@@ -41,21 +41,34 @@ struct ContentView: View {
             backgroundObsidian
                 .ignoresSafeArea()
 
-            // ------------------------------------------------------------------
-            // Lienzo de Renderizado Gráfico a 60 FPS
-            // ------------------------------------------------------------------
-            Canvas { context, size in
-                for touch in touches.values {
-                    let rect = CGRect(
-                        x: touch.location.x - 45,
-                        y: touch.location.y - 45,
-                        width: 90,
-                        height: 90
-                    )
-                    let circlePath = Path(ellipseIn: rect)
-                    context.stroke(circlePath, with: .color(titaniumColor), lineWidth: 3)
+            TimelineView(.animation) { timeline in
+                // ---------------------------------------
+                // Lienzo de Renderizado Gráfico a 60 FPS
+                // ---------------------------------------
+                Canvas { context, size in
+                    let currentDate = timeline.date
+
+                    for touch in touches.values {
+                        // Calculamos el radio dinamico con fisica oscilatoria
+                        let currentRadius = calculateRadius(for: touch, at: currentDate)
+
+                        let rect = CGRect(
+                            x: touch.location.x - currentRadius,
+                            y: touch.location.y - currentRadius,
+                            width: currentRadius * 2,
+                            height: currentRadius * 2
+                        )
+                        let circlePath = Path(ellipseIn: rect)
+
+                        // Si este dedo es el perdedor, destacamos el aro
+                        let strokeColor = isLoser(touch.id) ? Color.white : titaniumColor
+                        let strokeWidth: CGFloat = isLoser(touch.id) ? 6 : 3
+
+                        context.stroke(circlePath, with: .color(strokeColor), lineWidth: strokeWidth)
+                    }
                 }
             }
+
 
             // Capa transparente para captura de eventos multitáctiles del kernel
             MultitouchOverlayView { activeTouches in
@@ -72,27 +85,64 @@ struct ContentView: View {
         }
     }
 
-    // --------------------------------------------------------------------------
+    // ------------------------------------------------
     // Lógica de Transición de Estados (State Pattern)
-    // --------------------------------------------------------------------------
+    // ------------------------------------------------
     private func handleTouchUpdate(_ activeTouches: [UUID: TouchPoint]) {
+        let previousCount = self.touches.count
         self.touches = activeTouches
 
         if activeTouches.count >= 2 {
-            if gameState == .idle {
+            switch gameState {
+            case .idle:
+                // Inicia la tension con la fecha actual
                 gameState = .tension(startDate: Date())
+
+            case .tension:
+                // Si un jugador retiro el dedo antes de tiempo, reiniciamos el reloj a 3.0s
+                if activeTouches.count < previousCount {
+                    gameState = .tension(startDate: Date())
+                }
+
+            case .outcome:
+                break
             }
         } else {
+            // Si queda menos de 2 dedos, volvemos a reposo
             gameState = .idle
+        }
+    }
+
+    // --------------------------------
+    // Calcular la Oscilación Armonica
+    // --------------------------------
+    private func calculateRadius(for touch: TouchPoint, at currentDate: Date) -> CGFloat {
+        switch gameState {
+        case .idle:
+            return 45.0
+
+        case .tension(let startDate):
+            let elapsed = currentDate.timeIntervalSince(startDate)
+            let progress = min(elapsed / 3.0, 1.0)
+
+            // Frecuencia que se acelera de 10 rad/s a 40 rad/s
+            let frequency = 10.0 + (30.0 * progress)
+            let oscillation = sin(elapsed * frequency) * (4.0 * (1.0 - progress * 0.5))
+
+            return 45.0 + oscillation
+
+        case .outcome(let loserId):
+            // El aro del perdedor se expande con un golpe visual
+            return touch.id == loserId ? 65.0 : 40.0
         }
     }
 }
 
-// ------------------------------------------------------------------------------
+// -------------------------------------------------------------------------
 // Puente con UIKit para Detección Multitáctil (2 a 5 dedos simultáneos)
 // SwiftUI puro solo detecta 1 dedo con DragGesture; este componente activa
 // isMultipleTouchEnabled = true a nivel de hardware.
-// ------------------------------------------------------------------------------
+// -------------------------------------------------------------------------
 struct MultitouchOverlayView: UIViewRepresentable {
     var onTouchesChanged: ([UUID: TouchPoint]) -> Void
 
