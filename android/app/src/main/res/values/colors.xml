@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="titanium_bg">#08090A</color>
+    <color name="titanium_surface">#16181B</color>
+    <color name="titanium_border">#2C2D30</color>
+    <color name="titanium_white">#F5F5F7</color>
+    <color name="titanium_muted">#8E8E93</color>
+    <color name="titanium_accent">#30D158</color>
+    <color name="titanium_danger">#FF453A</color>
+</resources>
