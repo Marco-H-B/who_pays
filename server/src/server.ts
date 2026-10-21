@@ -2,6 +2,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
+import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { RoomManager, type RoomManagerOptions } from "./room.js";
 import type { ClientMessage, ServerEvent } from "./types.js";
@@ -121,13 +122,66 @@ export class WhoPaysServer {
   }
 
   private handleHttpRequest(req: http.IncomingMessage, res: http.ServerResponse): void {
+    const parsedUrl = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+    const pathname = parsedUrl.pathname;
+
+    // Webhook Oficial de Lemon Squeezy con validación HMAC-SHA256
+    if (req.method === "POST" && pathname === "/api/webhook/lemon") {
+      const chunks: Buffer[] = [];
+      req.on("data", (chunk: Buffer) => chunks.push(chunk));
+      req.on("end", () => {
+        const rawBody = Buffer.concat(chunks);
+        const signature = req.headers["x-signature"] as string | undefined;
+        const secret = process.env.LEMONSQUEEZY_WEBHOOK_SECRET || "whopays_lemon_sec_73067021";
+
+        if (signature) {
+          const hmac = crypto.createHmac("sha256", secret);
+          const digest = Buffer.from(hmac.update(rawBody).digest("hex"), "utf8");
+          const checksum = Buffer.from(signature, "utf8");
+          if (checksum.length !== digest.length || !crypto.timingSafeEqual(digest, checksum)) {
+            res.writeHead(403, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Firma inválida de webhook" }));
+            return;
+          }
+        }
+
+        try {
+          const payload = JSON.parse(rawBody.toString("utf8"));
+          const eventName = payload.meta?.event_name;
+          const customData = payload.meta?.custom_data;
+          const roomCode = customData?.room_code;
+
+          console.log(`[Lemon Squeezy] Webhook procesado: ${eventName} | Sala: ${roomCode || "N/A"}`);
+
+          if (roomCode) {
+            // Notificar a todos los clientes de la sala que la mesa está desbloqueada
+            this.broadcastToRoom(roomCode, {
+              type: "ROOM_STATE",
+              room: {
+                code: roomCode,
+                participantCount: this.roomManager.getRoom(roomCode)?.participants.size || 0,
+                isTensionActive: false,
+                participants: this.roomManager.getRoom(roomCode)?.toPublicJSON().participants || [],
+              },
+            });
+          }
+
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ status: "ok", received: true }));
+        } catch {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Payload no serializable" }));
+        }
+      });
+      return;
+    }
+
     if (!this.staticDir || !fs.existsSync(this.staticDir)) {
       res.writeHead(200, { "Content-Type": "text/plain" });
       res.end("WHO PAYS? WebSocket Server Active");
       return;
     }
 
-    const parsedUrl = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
     let reqPath = decodeURIComponent(parsedUrl.pathname);
     if (reqPath === "/") reqPath = "/index.html";
 
