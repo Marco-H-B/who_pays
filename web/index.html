@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#08090A">
+    <title>WHO PAYS?</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            background-color: #08090A;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+        }
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+        #hint {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: rgba(255, 255, 255, 0.4);
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        #hint h1 {
+            font-size: 20px;
+            font-weight: 500;
+            letter-spacing: -0.01em;
+            margin-bottom: 6px;
+        }
+        #hint p {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.25);
+        }
+    </style>
+</head>
+<body>
+    <div id="hint">
+        <h1>Pon tu dedo</h1>
+        <p>2 a 5 jugadores en pantalla</p>
+    </div>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        // Configuracion inicial del lienzo
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const hint = document.getElementById('hint');
+
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width * window.devicePixelRatio;
+            canvas.height = height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Estados del juego
+        const STATE = { IDLE: 'IDLE', TENSION: 'TENSION', OUTCOME: 'OUTCOME' };
+        let gameState = STATE.IDLE;
+        let tensionStart = 0;
+        let loserId = null;
+
+        // Mapa de toques activos
+        const touches = new Map();
+
+        // Motor de audio procedural sintetizado (Web Audio API)
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playPop() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.05);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.05);
+        }
+
+        function playOutcomeSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(80, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.25);
+            gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+
+            if (navigator.vibrate) {
+                navigator.vibrate([200]);
+            }
+        }
+
+        // Manejo de eventos multitactiles nativos
+        window.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            initAudio();
+            playPop();
+
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const t = e.changedTouches[i];
+                touches.set(t.identifier, { x: t.clientX, y: t.clientY });
+            }
+            evaluateState();
+        }, { passive: false });
+
+        window.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const t = e.changedTouches[i];
+                if (touches.has(t.identifier)) {
+                    touches.set(t.identifier, { x: t.clientX, y: t.clientY });
+                }
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                touches.delete(e.changedTouches[i].identifier);
+            }
+            evaluateState();
+        }, { passive: false });
+
+        window.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                touches.delete(e.changedTouches[i].identifier);
+            }
+            evaluateState();
+        }, { passive: false });
+
+        function evaluateState() {
+            const count = touches.size;
+            hint.style.opacity = count === 0 ? '1' : '0';
+
+            if (count >= 2) {
+                if (gameState === STATE.IDLE) {
+                    gameState = STATE.TENSION;
+                    tensionStart = performance.now();
+                }
+            } else {
+                gameState = STATE.IDLE;
+                loserId = null;
+            }
+        }
+
+        // Bucle de renderizado continuo a 60 FPS
+        function render(now) {
+            ctx.clearRect(0, 0, width, height);
+
+            if (gameState === STATE.TENSION) {
+                const elapsed = (now - tensionStart) / 1000;
+                if (elapsed >= 3.0) {
+                    // Seleccion aleatoria criptografica (CSPRNG)
+                    const ids = Array.from(touches.keys());
+                    const randomBuffer = new Uint32Array(1);
+                    window.crypto.getRandomValues(randomBuffer);
+                    const selectedIndex = randomBuffer[0] % ids.length;
+                    loserId = ids[selectedIndex];
+                    gameState = STATE.OUTCOME;
+                    playOutcomeSound();
+                }
+            }
+
+            // Dibujar aros alrededor de cada dedo
+            touches.forEach((pos, id) => {
+                let radius = 45;
+
+                if (gameState === STATE.TENSION) {
+                    const elapsed = (now - tensionStart) / 1000;
+                    const progress = Math.min(elapsed / 3.0, 1.0);
+                    const freq = 12 + (30 * progress);
+                    radius = 45 + Math.sin(elapsed * freq) * (5 * (1 - progress * 0.4));
+                } else if (gameState === STATE.OUTCOME) {
+                    radius = (id === loserId) ? 68 : 38;
+                }
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
+
+                if (gameState === STATE.OUTCOME && id === loserId) {
+                    // Aro del perdedor en titanio blanco brillante
+                    ctx.strokeStyle = '#FFFFFF';
+                    ctx.lineWidth = 5;
+                    ctx.shadowColor = '#FFFFFF';
+                    ctx.shadowBlur = 15;
+                    ctx.stroke();
+
+                    // Etiqueta "TU PAGAS"
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, monospace';
+                    ctx.textAlign = 'center';
+                    ctx.shadowBlur = 0;
+                    ctx.fillText('TÚ PAGAS', pos.x, pos.y - radius - 20);
+                } else {
+                    // Aros normales en titanio mate
+                    ctx.strokeStyle = (gameState === STATE.OUTCOME) ? 'rgba(58, 61, 69, 0.3)' : '#3A3D45';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+
+                    if (gameState === STATE.OUTCOME) {
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                        ctx.font = 'bold 12px -apple-system, BlinkMacSystemFont, monospace';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('A SALVO', pos.x, pos.y - radius - 15);
+                    }
+                }
+                ctx.restore();
+            });
+
+            requestAnimationFrame(render);
+        }
+        requestAnimationFrame(render);
+    </script>
+</body>
+</html>
