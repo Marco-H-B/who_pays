@@ -1259,7 +1259,8 @@
         // ==========================================
         // AUTENTICACIÓN GOOGLE REAL & BORRADO DE CUENTA
         // ==========================================
-        let GOOGLE_CLIENT_ID = localStorage.getItem('whopays_google_client_id') || "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com";
+        // Google Web Client ID configurado en Google Cloud Console
+        let GOOGLE_CLIENT_ID = localStorage.getItem('whopays_google_client_id') || "426594946636-9fd8kavq5e781vf9ojdn5f1ugb5fvoue.apps.googleusercontent.com";
 
         function toggleClientIdConfig() {
             const box = document.getElementById('client-id-config-box');
