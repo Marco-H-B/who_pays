@@ -43,7 +43,7 @@
             /* Barra Superior centrada debajo de la Isla Dinámica (iPhone 15 / Apple HIG) */
             #header-container {
                 position: absolute;
-                top: max(calc(env(safe-area-inset-top) + 14px), 58px);
+                top: max(calc(env(safe-area-inset-top) + 6px), 48px);
                 left: 0;
                 width: 100%;
                 display: flex;
@@ -70,16 +70,19 @@
                 background: transparent;
                 border: none;
                 color: #8e8e93;
-                padding: 7px 16px;
+                width: 96px;
+                height: 34px;
+                padding: 0;
                 font-size: 13px;
                 font-weight: 500;
-                border-radius: 18px;
+                border-radius: 17px;
                 cursor: pointer;
                 transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-                min-height: 36px;
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
+                text-align: center;
+                box-sizing: border-box;
             }
             .mode-btn.active {
                 background: #2c2d33;
@@ -93,12 +96,10 @@
                 outline-offset: 2px;
             }
 
+            /* Botón de perfil con círculo único (sin borde exterior redundante) */
             #auth-btn {
-                background: rgba(255, 255, 255, 0.06);
-                border: 1px solid rgba(255, 255, 255, 0.06);
-                border-radius: 50%;
-                width: 32px;
-                height: 32px;
+                background: transparent;
+                border: none;
                 padding: 0;
                 margin-left: 2px;
                 margin-right: 2px;
@@ -107,26 +108,29 @@
                 justify-content: center;
                 pointer-events: auto;
                 cursor: pointer;
-                transition: all 0.2s ease;
-            }
-            #auth-btn:hover {
-                background: rgba(255, 255, 255, 0.12);
+                transition: transform 0.15s ease;
             }
             #auth-btn:active {
                 transform: scale(0.92);
             }
             .auth-avatar-mini {
-                width: 18px;
-                height: 18px;
+                width: 28px;
+                height: 28px;
                 border-radius: 50%;
-                background: #3a3d45;
-                color: #fff;
-                font-size: 10px;
+                background: #2c2d33;
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                color: #ffffff;
+                font-size: 11px;
                 font-weight: 700;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 overflow: hidden;
+                transition: background 0.2s ease, border-color 0.2s ease;
+            }
+            #auth-btn:hover .auth-avatar-mini {
+                background: #3a3d45;
+                border-color: rgba(255, 255, 255, 0.25);
             }
             .auth-avatar-mini img {
                 width: 100%;
@@ -558,10 +562,12 @@
             <div id="top-bar" role="tablist" aria-label="Selector de modo de juego y perfil">
                 <button id="btn-mode-local" class="mode-btn active" role="tab" aria-selected="true" onclick="switchMode('local')">1 Celular</button>
                 <button id="btn-mode-qr" class="mode-btn" role="tab" aria-selected="false" onclick="switchMode('qr')">Mesa QR</button>
-                <button id="auth-btn" role="button" aria-label="Perfil y autenticación de usuario" title="Perfil y cuenta" onclick="openAuthModal()">
-                    <div id="user-avatar-mini" class="auth-avatar-mini">M</div>
-                </button>
             </div>
+            <button id="auth-btn" role="button" aria-label="Perfil y autenticación de usuario" title="Perfil y cuenta" onclick="openAuthModal()">
+                <div id="user-avatar-mini" class="auth-avatar-mini">
+                    M
+                </div>
+            </button>
         </div>
 
         <div id="hint">
