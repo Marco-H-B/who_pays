@@ -106,7 +106,7 @@ Cada aspecto técnico de WHO PAYS? está respaldado por las asignaturas del plan
 ### RF-03: Pasarela de Monetización Escalonada (Paywall con TTL Estricto)
 
 - **Opciones de Pago Disponibles (Valores Canónicos en USD):**
-    - **Pase de Mesa (3 Horas):** **$1.99 USD** (~S/ 7.16 PEN al tipo de cambio S/ 3.60) para la salida de hoy.
+    - **Pase de Mesa (2 Horas):** **$1.99 USD** (~S/ 7.16 PEN al tipo de cambio S/ 3.60) para la salida de hoy.
     - **WHO PAYS? PRO:** **$9.99 USD/mes** con salas QR ilimitadas y cero publicidad.
 - **Ventana de Pago Estricta (TTL 3 Minutos) con Indicador Cromático Dinámico:**
     - Al abrirse el modal de la pasarela, se inicia una cuenta regresiva de **máximo 3:00 minutos (180 segundos)** visible con tipografía monoespaciada tabular `SF Mono`.

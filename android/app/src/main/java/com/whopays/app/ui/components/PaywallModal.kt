@@ -140,13 +140,13 @@ fun PaywallModal(
                 ) {
                     Column {
                         Text(
-                            text = "Pase de Fiesta (3 Horas)",
+                            text = "Pase de Fiesta (2 Horas)",
                             color = TitaniumWhite,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
-                            text = "Partidas ilimitadas esta noche",
+                            text = "Partidas ilimitadas durante 2 horas",
                             color = TitaniumMuted,
                             fontSize = 12.sp
                         )

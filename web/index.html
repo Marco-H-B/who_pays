@@ -619,7 +619,7 @@
                     <div id="plan-pass" class="plan-card selected" onclick="selectPlan('pass')">
                         <div>
                             <h4>Pase de Mesa</h4>
-                            <p>Válido por 3 horas continuas</p>
+                            <p>Válido por 2 horas continuas</p>
                         </div>
                         <div class="plan-price-main">$1.99</div>
                     </div>
@@ -1431,7 +1431,7 @@
                     if (selectedPlan === "pro") {
                         localStorage.setItem("whopays_pro_status", "active");
                     } else {
-                        const expiry = Date.now() + 3 * 3600 * 1000;
+                        const expiry = Date.now() + 2 * 3600 * 1000;
                         localStorage.setItem("whopays_mesa_pass_expiry", expiry.toString());
                     }
 
