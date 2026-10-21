@@ -49,6 +49,7 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                gap: 8px;
                 padding: 0 16px;
                 z-index: 50;
                 pointer-events: none;
@@ -96,48 +97,44 @@
                 outline-offset: 2px;
             }
 
-            /* Botón de perfil unificado al mismo alto exacto (36px) */
+            /* Botón Avatar de perfil: Círculo único de exactamente 36px de diámetro */
             #auth-btn {
-                background: transparent;
-                border: none;
-                padding: 0;
                 width: 36px;
                 height: 36px;
-                margin-left: 2px;
-                margin-right: 2px;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                pointer-events: auto;
-                cursor: pointer;
-                transition: transform 0.15s ease;
-            }
-            #auth-btn:active {
-                transform: scale(0.92);
-            }
-            .auth-avatar-mini {
-                width: 36px;
-                height: 36px;
+                min-width: 36px;
+                min-height: 36px;
+                max-width: 36px;
+                max-height: 36px;
                 border-radius: 50%;
                 background: #2c2d33;
                 border: 1px solid rgba(255, 255, 255, 0.12);
                 color: #ffffff;
                 font-size: 13px;
                 font-weight: 700;
-                display: flex;
+                display: inline-flex;
                 align-items: center;
                 justify-content: center;
+                padding: 0;
+                margin: 0;
+                cursor: pointer;
                 overflow: hidden;
-                transition: background 0.2s ease, border-color 0.2s ease;
+                pointer-events: auto;
+                box-sizing: border-box;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+                transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
             }
-            #auth-btn:hover .auth-avatar-mini {
+            #auth-btn:hover {
                 background: #3a3d45;
                 border-color: rgba(255, 255, 255, 0.25);
             }
-            .auth-avatar-mini img {
+            #auth-btn:active {
+                transform: scale(0.92);
+            }
+            #auth-btn img {
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
+                border-radius: 50%;
             }
 
             /* Indicación central en reposo */
@@ -565,11 +562,7 @@
                 <button id="btn-mode-local" class="mode-btn active" role="tab" aria-selected="true" onclick="switchMode('local')">1 Celular</button>
                 <button id="btn-mode-qr" class="mode-btn" role="tab" aria-selected="false" onclick="switchMode('qr')">Mesa QR</button>
             </div>
-            <button id="auth-btn" role="button" aria-label="Perfil y autenticación de usuario" title="Perfil y cuenta" onclick="openAuthModal()">
-                <div id="user-avatar-mini" class="auth-avatar-mini">
-                    M
-                </div>
-            </button>
+            <button id="auth-btn" role="button" aria-label="Perfil y cuenta" title="Perfil y cuenta" onclick="openAuthModal()">M</button>
         </div>
 
         <div id="hint">
@@ -841,7 +834,7 @@
             const chipsSection = document.getElementById("chips-section");
             const chipsList = document.getElementById("chips-list");
             const userDisplay = document.getElementById("user-display");
-            const userAvatarMini = document.getElementById("user-avatar-mini");
+            const userAvatarMini = document.getElementById("auth-btn");
             const toast = document.getElementById("toast");
 
             let width = window.innerWidth;
@@ -1775,7 +1768,7 @@
             function renderParticipantsList(list) {
                 const countElem = document.getElementById("qr-participant-count");
                 const pillsElem = document.getElementById("qr-participant-pills");
-                
+
                 // N Invitados que escanearon el QR + 1 Anfitrión que abrió la mesa
                 const total = list.length;
                 const guests = Math.max(0, total - 1);
