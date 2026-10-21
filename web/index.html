@@ -711,11 +711,47 @@
                     <img id="qr-image" src="" alt="QR Sala" style="width: 100%; height: 100%" />
                 </div>
 
-                <div style="font-size: 11px; font-weight: 600; color: #30d158; margin-bottom: 12px">
+                <!-- Lista de Jugadores Conectados por WebSocket -->
+                <div id="qr-participants-box" style="margin: 10px 0; padding: 8px 12px; background: rgba(255, 255, 255, 0.04); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08);">
+                    <div style="font-size: 11px; color: #8e8e93; margin-bottom: 6px;">Jugadores en la Mesa (<span id="qr-participant-count">1</span>)</div>
+                    <div id="qr-participant-pills" style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; min-height: 24px;">
+                        <span class="chip-item" style="font-size: 11px; padding: 3px 10px;">Tú (Anfitrión)</span>
+                    </div>
+                </div>
+
+                <div style="font-size: 11px; font-weight: 600; color: #30d158; margin-bottom: 10px">
                     Pase de Mesa Activo
                 </div>
-                <button class="btn-primary" onclick="switchMode('local')">Volver a 1 Celular</button>
+                <button id="btn-enter-room-arena" class="btn-primary" style="margin-bottom: 8px;" onclick="enterRoomArena()">Jugar en Esta Mesa</button>
+                <button class="btn-secondary" onclick="switchMode('local')">Volver a 1 Celular</button>
             </div>
+        </div>
+
+        <!-- Modal de Invitado para Unirse a Mesa QR -->
+        <div id="guest-join-modal" class="modal-overlay">
+            <div class="modal-card">
+                <div style="font-size: 11px; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.05em">
+                    WHO PAYS? • Mesa Social
+                </div>
+                <div id="guest-room-title" style="font-family: monospace; font-size: 24px; letter-spacing: 0.15em; margin: 6px 0">
+                    SALA 7F2A
+                </div>
+                <p style="font-size: 12px; color: rgba(255, 255, 255, 0.65); margin-bottom: 14px;">
+                    Ingresa tu nombre para entrar a la mesa y jugar en vivo.
+                </p>
+                <div class="input-group">
+                    <input type="text" id="guest-name-input" placeholder="Tu nombre o apodo (ej. Pedro)" maxlength="20" style="text-align: center; font-size: 15px;" />
+                </div>
+                <button class="btn-primary" onclick="submitGuestJoin()">Entrar a la Mesa</button>
+            </div>
+        </div>
+
+        <!-- Banner de Estado de Sala Activa en Juego -->
+        <div id="room-active-banner" style="display: none; position: absolute; top: max(calc(env(safe-area-inset-top) + 8px), 48px); left: 50%; transform: translateX(-50%); background: rgba(22, 23, 27, 0.92); border: 1px solid rgba(255,255,255,0.12); border-radius: 20px; padding: 6px 16px; font-size: 12px; font-weight: 600; color: #30D158; z-index: 60; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); pointer-events: auto; display: none; align-items: center; gap: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+            <span id="room-banner-code" style="color: #FFF; font-family: monospace;">SALA 7F2A</span>
+            <span style="color: rgba(255,255,255,0.3);">•</span>
+            <span id="room-banner-status">1 Jugador</span>
+            <button onclick="leaveRoomMode()" style="background: none; border: none; color: #8E8E93; cursor: pointer; padding: 0 4px; font-size: 12px;">✕</button>
         </div>
 
         <!-- Modal de Perfil & Google Sign-In Real -->
@@ -980,7 +1016,10 @@
                 if (paywallModal.classList.contains("visible") && target.closest(".modal-card")) return true;
                 if (qrModal.classList.contains("visible") && target.closest(".modal-card")) return true;
                 if (authModal.classList.contains("visible") && target.closest(".modal-card")) return true;
+                const guestModal = document.getElementById("guest-join-modal");
+                if (guestModal && guestModal.classList.contains("visible") && target.closest(".modal-card")) return true;
                 if (target.closest("#header-container")) return true;
+                if (target.closest("#room-active-banner")) return true;
                 return false;
             }
 
@@ -1003,6 +1042,15 @@
                             playPop();
                         }
                     }
+
+                    if (isMultiplayerActive && touches.size > 0) {
+                        sendWs({
+                            type: "TOUCH_DOWN",
+                            roomCode: currentRoomCode,
+                            participantId: myParticipantId,
+                        });
+                    }
+
                     evaluateState();
                 },
                 { passive: false },
@@ -1031,6 +1079,15 @@
                     const t = e.changedTouches[i];
                     touches.delete(t.identifier);
                 }
+
+                if (isMultiplayerActive && touches.size === 0) {
+                    sendWs({
+                        type: "TOUCH_UP",
+                        roomCode: currentRoomCode,
+                        participantId: myParticipantId,
+                    });
+                }
+
                 evaluateState();
             });
 
@@ -1040,10 +1097,24 @@
                     const t = e.changedTouches[i];
                     touches.delete(t.identifier);
                 }
+
+                if (isMultiplayerActive && touches.size === 0) {
+                    sendWs({
+                        type: "TOUCH_UP",
+                        roomCode: currentRoomCode,
+                        participantId: myParticipantId,
+                    });
+                }
+
                 evaluateState();
             });
 
             function evaluateState() {
+                if (isMultiplayerActive) {
+                    hint.style.opacity = touches.size === 0 ? "1" : "0";
+                    return;
+                }
+
                 const count = touches.size;
 
                 if (gameState === STATE.OUTCOME) {
@@ -1079,7 +1150,7 @@
                     const elapsed = (now - tensionStart) / 1000;
                     const progress = Math.min(elapsed / 3.0, 1.0);
 
-                    if (progress >= 1.0) {
+                    if (!isMultiplayerActive && progress >= 1.0) {
                         resolveOutcome();
                     } else {
                         const freq = 12 + progress * 28;
@@ -1264,6 +1335,10 @@
                     const roomUrl = window.location.origin + "/?room=7F2A";
                     qrImg.src =
                         "https://api.qrserver.com/v1/create-qr-code/?size=170x170&data=" + encodeURIComponent(roomUrl);
+                    
+                    // Conectar automáticamente al servidor WebSocket en tiempo real
+                    const hostName = userDisplay.innerText !== "Invitado" ? userDisplay.innerText : "Anfitrión";
+                    connectToWebSocket("7F2A", hostName, true);
                 } else {
                     btnLocal.classList.add("active");
                     btnLocal.setAttribute("aria-selected", "true");
@@ -1272,6 +1347,9 @@
                     qrModal.classList.remove("visible");
                     paywallModal.classList.remove("visible");
                     clearInterval(paywallTimerInterval);
+                    if (isMultiplayerActive) {
+                        leaveRoomMode();
+                    }
                 }
             }
 
@@ -1567,6 +1645,258 @@
             const existingUser = JSON.parse(localStorage.getItem("whopays_user") || "null");
             if (existingUser) {
                 setUserSession(existingUser);
+            }
+
+            // ==========================================
+            // MÓDULO WEBSOCKET DE MESA QR MULTIDISPOSITIVO
+            // ==========================================
+            let wsClient = null;
+            let currentRoomCode = "7F2A";
+            let myParticipantId = localStorage.getItem("whopays_device_id");
+            if (!myParticipantId) {
+                myParticipantId = "dev_" + Math.random().toString(36).substring(2, 9);
+                localStorage.setItem("whopays_device_id", myParticipantId);
+            }
+            let myParticipantName = "Invitado";
+            let isHostParticipant = false;
+            let isMultiplayerActive = false;
+            let multiplayerParticipants = [];
+
+            function getWebSocketUrl() {
+                const isHttps = window.location.protocol === "https:";
+                const wsProto = isHttps ? "wss:" : "ws:";
+                return `${wsProto}//${window.location.host}/`;
+            }
+
+            function connectToWebSocket(roomCode, participantName, isHost) {
+                currentRoomCode = (roomCode || "7F2A").toUpperCase();
+                myParticipantName = participantName || "Invitado";
+                isHostParticipant = !!isHost;
+
+                if (wsClient && wsClient.readyState === WebSocket.OPEN) {
+                    sendWs({
+                        type: "JOIN_ROOM",
+                        roomCode: currentRoomCode,
+                        participantId: myParticipantId,
+                        participantName: myParticipantName,
+                    });
+                    return;
+                }
+
+                try {
+                    wsClient = new WebSocket(getWebSocketUrl());
+
+                    wsClient.onopen = () => {
+                        console.log("⚡ Conectado al servidor WebSocket de WHO PAYS?");
+                        sendWs({
+                            type: "JOIN_ROOM",
+                            roomCode: currentRoomCode,
+                            participantId: myParticipantId,
+                            participantName: myParticipantName,
+                        });
+                    };
+
+                    wsClient.onmessage = (event) => {
+                        try {
+                            const data = JSON.parse(event.data);
+                            handleServerEvent(data);
+                        } catch (err) {
+                            console.error("Error parseando evento del servidor:", err);
+                        }
+                    };
+
+                    wsClient.onclose = () => {
+                        console.log("Conexión WebSocket cerrada");
+                    };
+
+                    wsClient.onerror = (err) => {
+                        console.warn("WebSocket error:", err);
+                    };
+                } catch (err) {
+                    console.error("Fallo al inicializar WebSocket:", err);
+                }
+            }
+
+            function sendWs(payload) {
+                if (wsClient && wsClient.readyState === WebSocket.OPEN) {
+                    wsClient.send(JSON.stringify(payload));
+                }
+            }
+
+            function handleServerEvent(event) {
+                switch (event.type) {
+                    case "ROOM_STATE": {
+                        multiplayerParticipants = event.participants || [];
+                        renderParticipantsList(multiplayerParticipants);
+                        if (isMultiplayerActive) {
+                            updateActiveBanner(event);
+                            if (event.state === "IDLE" && gameState === STATE.OUTCOME) {
+                                gameState = STATE.IDLE;
+                                loserId = null;
+                                frozenLoserPos = null;
+                                touches.clear();
+                                hint.querySelector("h1").innerText = "Mantén tu dedo";
+                                hint.querySelector("p").innerText = "esperando a los demás comensales";
+                            }
+                        }
+                        break;
+                    }
+                    case "TENSION_START": {
+                        if (isMultiplayerActive) {
+                            gameState = STATE.TENSION;
+                            tensionStart = performance.now();
+                            initAudio();
+                            playPop();
+                            hint.style.opacity = "0";
+                            showToast("¡Tensión iniciada en toda la mesa!");
+                        }
+                        break;
+                    }
+                    case "TENSION_CANCEL": {
+                        if (isMultiplayerActive) {
+                            if (gameState === STATE.TENSION) {
+                                playAbortSound();
+                            }
+                            gameState = STATE.IDLE;
+                            hint.style.opacity = "1";
+                            hint.querySelector("h1").innerText = "Alguien soltó el dedo";
+                            hint.querySelector("p").innerText = "apoyen todos para reiniciar";
+                        }
+                        break;
+                    }
+                    case "OUTCOME": {
+                        if (isMultiplayerActive) {
+                            gameState = STATE.OUTCOME;
+                            const isLoser = event.loserId === myParticipantId;
+
+                            if (touches.size > 0) {
+                                const first = touches.values().next().value;
+                                frozenLoserPos = { x: first.x, y: first.y };
+                            } else {
+                                frozenLoserPos = { x: width / 2, y: height / 2 };
+                            }
+
+                            if (isLoser) {
+                                loserId = myParticipantId;
+                                playThud();
+                                if (navigator.vibrate) {
+                                    navigator.vibrate([150, 60, 250, 60, 600]);
+                                }
+                                showToast("¡TÚ PAGAS LA CUENTA!");
+                            } else {
+                                loserId = event.loserId;
+                                playSuccessChime();
+                                showToast(`A SALVO • Paga: ${event.loserName}`);
+                            }
+
+                            setTimeout(() => {
+                                if (isMultiplayerActive) {
+                                    promptMultiplayerRoundFinish(isLoser, event.loserName);
+                                }
+                            }, 2600);
+                        }
+                        break;
+                    }
+                    case "ERROR": {
+                        showToast(event.message || "Error en sala");
+                        break;
+                    }
+                }
+            }
+
+            function renderParticipantsList(list) {
+                const countElem = document.getElementById("qr-participant-count");
+                const pillsElem = document.getElementById("qr-participant-pills");
+                if (countElem) countElem.innerText = list.length;
+                if (pillsElem) {
+                    pillsElem.innerHTML = list
+                        .map(
+                            (p) =>
+                                `<span class="chip-item" style="font-size: 11px; padding: 4px 10px; background: ${
+                                    p.id === myParticipantId ? "#2C2D33" : "rgba(255,255,255,0.06)"
+                                }; color: ${p.id === myParticipantId ? "#FFF" : "#8E8E93"}; border: 1px solid rgba(255,255,255,0.1);">${p.name} ${
+                                    p.id === myParticipantId ? "(Tú)" : ""
+                                }</span>`,
+                        )
+                        .join("");
+                }
+            }
+
+            function updateActiveBanner(event) {
+                const banner = document.getElementById("room-active-banner");
+                const status = document.getElementById("room-banner-status");
+                if (banner && status) {
+                    const pressingCount = event.participants.filter((p) => p.isPressing).length;
+                    status.innerText = `${event.participants.length} en mesa (${pressingCount} listos)`;
+                }
+            }
+
+            function enterRoomArena() {
+                qrModal.classList.remove("visible");
+                isMultiplayerActive = true;
+                document.getElementById("header-container").style.display = "none";
+                const banner = document.getElementById("room-active-banner");
+                if (banner) {
+                    document.getElementById("room-banner-code").innerText = "SALA " + currentRoomCode;
+                    banner.style.display = "flex";
+                }
+                hint.querySelector("h1").innerText = "Mantén tu dedo";
+                hint.querySelector("p").innerText = "apoyen 2 o más para empezar la tensión";
+                showToast("¡Listo! Apoya tu dedo en cualquier parte");
+            }
+
+            function leaveRoomMode() {
+                isMultiplayerActive = false;
+                sendWs({
+                    type: "LEAVE_ROOM",
+                    roomCode: currentRoomCode,
+                    participantId: myParticipantId,
+                });
+                const banner = document.getElementById("room-active-banner");
+                if (banner) banner.style.display = "none";
+                document.getElementById("header-container").style.display = "flex";
+                switchMode("local");
+                hint.querySelector("h1").innerText = "Pon tu dedo";
+                hint.querySelector("p").innerText = "2 a 5 jugadores en pantalla";
+                showToast("Has salido de la mesa");
+            }
+
+            function promptMultiplayerRoundFinish(isLoser, loserName) {
+                const confirmed = confirm(
+                    isLoser
+                        ? `¡Te tocó pagar la cuenta!\n\n¿Deseas jugar otra ronda en la Mesa ${currentRoomCode}?`
+                        : `¡Estás a salvo! Perdió ${loserName}.\n\n¿Deseas jugar otra ronda en la Mesa ${currentRoomCode}?`,
+                );
+                if (confirmed) {
+                    sendWs({
+                        type: "RESET_ROUND",
+                        roomCode: currentRoomCode,
+                        participantId: myParticipantId,
+                    });
+                }
+            }
+
+            function submitGuestJoin() {
+                const input = document.getElementById("guest-name-input");
+                const name = (input.value || "").trim() || "Comensal " + Math.floor(Math.random() * 90 + 10);
+                myParticipantName = name;
+                document.getElementById("guest-join-modal").classList.remove("visible");
+                connectToWebSocket(currentRoomCode, myParticipantName, false);
+                enterRoomArena();
+            }
+
+            // Detección automática de invitación por URL (?room=...)
+            const urlQuery = new URLSearchParams(window.location.search);
+            const queryRoom = urlQuery.get("room");
+            if (queryRoom) {
+                currentRoomCode = queryRoom.toUpperCase();
+                const guestModal = document.getElementById("guest-join-modal");
+                document.getElementById("guest-room-title").innerText = "SALA " + currentRoomCode;
+                guestModal.classList.add("visible");
+                const existingUser = JSON.parse(localStorage.getItem("whopays_user") || "null");
+                if (existingUser && existingUser.name) {
+                    document.getElementById("guest-name-input").value = existingUser.name;
+                }
             }
         </script>
     </body>

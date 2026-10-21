@@ -1,0 +1,28 @@
+{
+  "name": "who-pays-server",
+  "version": "1.0.0",
+  "description": "High-fidelity real-time WebSocket game server for WHO PAYS?",
+  "main": "dist/server.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "tsx src/server.ts",
+    "test": "tsx --test test/**/*.test.ts"
+  },
+  "keywords": [
+    "websocket",
+    "who-pays",
+    "real-time"
+  ],
+  "author": "Marco Antonio Huamani Bonifacio",
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "@types/ws": "^8.5.14",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
