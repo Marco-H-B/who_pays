@@ -95,32 +95,33 @@ Cada aspecto técnico de WHO PAYS? está respaldado por las asignaturas del plan
 
 ### RF-02: Modo Mesa Sincronizada QR para 6 a 30+ Jugadores
 
-- El anfitrión selecciona "Mesa QR". La app genera un código QR y un enlace corto único (ej. `whopays.app/m/7F2A`).
-- **Experiencia Invitado:** Los demás escanean con su cámara. Se abre una PWA ultraligera en su navegador móvil en menos de 3 segundos, sin login ni descargas.
+- El anfitrión selecciona el modo **"Mesa QR"** (despejado de redundancias en la barra superior: botones canónicos **"1 Celular"** y **"Mesa QR"**).
+- **Pasarela Previa al Despliegue:** Si el anfitrión no posee membresía PRO activa ni un pase vigente, la app despliega de forma inmediata la **Pasarela de Monetización Escalonada (Paywall Modal)** antes de generar o exponer la sala QR.
+- **Experiencia Invitado:** Tras desbloquear la mesa, los demás escanean con su cámara. Se abre una PWA ultraligera en su navegador móvil en menos de 3 segundos, sin login forzoso ni descargas.
 - **Sincronización WebSockets (CC311):** Todos mantienen pulsado su botón en pantalla. El servidor WebSockets envía la señal de tensión al unísono a todos los teléfonos conectados.
 - Al resolverse:
     - El teléfono del perdedor vibra fuertemente y muestra **"TÚ PAGAS"** sobre fondo titanio oscuro.
     - Los demás teléfonos vibran con un pulso suave y muestran **"A SALVO"** sobre fondo blanco perla.
 
-### RF-03: Pasarela de Monetización Escalonada
+### RF-03: Pasarela de Monetización Escalonada (Paywall con TTL Estricto)
 
-- Si en una Mesa QR se conectan 6 o más personas:
-    - El anfitrión puede pagar **\$1.99 USD** por esa única ronda (Pase de 1 Solo Uso).
-    - O puede activar la suscripción **WHO PAYS? PRO** por **\$9.99 USD/mes** para rondas ilimitadas.
+- **Opciones de Pago Disponibles:**
+    - **Pase de Mesa (3 Horas):** **S/ 3.50 PEN** (~$0.99 USD) para la salida de hoy.
+    - **WHO PAYS? PRO:** **S/ 9.90 PEN/mes** (~$2.99 USD) o $19.99 USD vitalicio con salas QR ilimitadas y cero anuncios.
 - **Ventana de Pago Estricta (TTL 3 Minutos) con Indicador Cromático Dinámico:**
-    - Al abrirse el modal de cobro, se inicia una cuenta regresiva de **máximo 3:00 minutos (180 segundos)** visible para el anfitrión con tipografía monoespaciada tabular `SF Mono`.
+    - Al abrirse el modal de la pasarela, se inicia una cuenta regresiva de **máximo 3:00 minutos (180 segundos)** visible con tipografía monoespaciada tabular `SF Mono`.
     - **Gradiente Dinámico de Urgencia (Apple HIG):**
         - **3:00 a 1:30 (180s - 90s):** Verde Esmeralda (`#30D158`) — Estado tranquilo / tiempo suficiente.
         - **1:30 a 0:30 (90s - 30s):** Amarillo Ámbar (`#FFD60A`) — Advertencia de tiempo medio.
-        - **0:30 a 0:00 (30s - 0s):** Rojo Carmesí (`#FF453A`) con micro-pulsos en los últimos 15s — Urgencia crítica de expiración.
+        - **0:30 a 0:00 (30s - 0s):** Rojo Carmesí (`#FF453A`) con micro-pulsos — Urgencia crítica de expiración.
     - **Cuenta Regresiva Sonora (Últimos 10 Segundos):**
-        - Del segundo 10 al 4: Pulso acústico audible rítmico (800 Hz) a cada segundo exacto tipo metrónomo de precisión.
-        - Segundos 3, 2 y 1: Beep de alta frecuencia (1200 Hz) sincronizado con el destello del reloj.
-        - Segundo 0: Tono descendente sordo (150 Hz) de cancelación definitiva.
-    - Si el pago no se completa dentro de los 3 minutos, la orden y la sala efímera expiran automáticamente en el backend, liberando los recursos en memoria RAM (`CC222`) y devolviendo la interfaz al estado de espera o reintento.
+        - Del segundo 10 al 4: Pulso acústico audible rítmico (800 Hz) a cada segundo exacto.
+        - Segundos 3, 2 y 1: Beep de alta frecuencia (1200 Hz).
+        - Segundo 0: Tono descendente sordo (150 Hz) de expiración definitiva.
+    - **Regla Estricta de Auto-Cierre por Expiración:**
+        - Al llegar el contador a **00:00**, la pasarela se **cierra automáticamente**, cancela la reserva efímera, devuelve la interfaz a modo local ("1 Celular") y emite una notificación táctil/visual de sesión expirada.
 - **Integraciones de Pago:**
-    - App Móvil Nativa: Google Play Billing (Android) y Apple In-App Purchases / StoreKit 2 (iOS).
-    - Web / PWA: Lemon Squeezy (Merchant of Record internacional con Apple Pay, Google Pay y tarjetas) + pasarelas locales (Lemon Cash / Yape / Plin).
+    - Pasarelas Rápidas: Yape / Plin, Tarjetas de Débito/Crédito y Apple Pay / Google Pay.
 
 ### RF-04: El Libro de Deudas Social (Función Pro)
 

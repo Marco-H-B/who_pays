@@ -27,13 +27,13 @@ stateDiagram-v2
         OutcomeRevealed --> Idle: Descartado si no se usa Libro de Deudas
     }
 
-    state "Modo Mesa QR (6 a 30+ jugadores)" as QRMode {
-        Idle --> HostCreatesRoom: Toca "Crear Mesa QR"
-        HostCreatesRoom --> LobbyWaiting: Genera código QR y URL
-        LobbyWaiting --> PaywallModal: Si se conectan >= 6 jugadores y no es Pro
-        PaywallModal --> LobbyWaiting: Anfitrión paga $1.99 o activa Pro dentro de 3:00 min
-        PaywallModal --> RoomExpired: Timeout de 3 minutos alcanzado (libera sala)
-        RoomExpired --> Idle: Cancelar o reiniciar sala
+    state "Modo Mesa QR (Multidispositivo)" as QRMode {
+        Idle --> CheckMesaAccess: Toca "Mesa QR"
+        CheckMesaAccess --> LobbyWaiting: Posee Pase Activo o Membresía PRO
+        CheckMesaAccess --> PaywallModal: No posee pase (Abre Pasarela con TTL 3:00 min)
+        PaywallModal --> LobbyWaiting: Pago confirmado (S/ 3.50 Pase 3h o S/ 9.90 PRO)
+        PaywallModal --> Idle: Contador llega a 00:00 (Auto-cierre y cancelación de sala)
+        PaywallModal --> Idle: Toca "Volver a 1 Celular"
         LobbyWaiting --> SynchronizedCountdown: Anfitrión pulsa "Iniciar Veredicto"
         SynchronizedCountdown --> SynchronizedOutcome: WebSockets emite veredicto
         SynchronizedOutcome --> LobbyWaiting: Guarda perdedor automático & opción de "Revancha"
@@ -55,18 +55,18 @@ stateDiagram-v2
     - **Si ya se usó antes:** Muestra directamente los chips de un solo toque: `[ Pedro ]` `[ Lucas ]` `[ Marco ]` `[ Renato ]`. Pedro solo toca su chip en 0.5 segundos.
     - Marco ingresa `S/ 48.00` opcionalmente y pulsa `[Guardar en Deudas]`. La deuda queda asentada en el grafo (`CC232`). Si no desean registrarla, basta con tocar fuera de la tarjeta para volver a jugar.
 
-### Flujo 2: Mesa Grande en Restaurante (10 personas)
+### Flujo 2: Mesa Grande en Restaurante (Multidispositivo)
 
-1. **Paso 1:** Marco toca el botón sutil _"Mesa QR"_. La pantalla muestra un código QR elegante.
-2. **Paso 2 (Identificación Automática en Modo QR):** Los otros 9 comensales apuntan la cámara de su teléfono y entran a `whopays.app/m/7F2A` en Safari/Chrome al instante. Cada uno introduce su nombre (ej. "Carlos", "Lucía") en un campo de 1 línea antes de entrar a la sala.
-3. **Paso 3 (Ventana de Pago con Timeout de 3 Minutos & Color Dinámico):** Como son 10 personas, a Marco (el anfitrión) le aparece el modal de activación con un reloj regresivo **03:00** que muta de color según la urgencia:
+1. **Paso 1:** Marco toca el botón superior **"Mesa QR"**.
+2. **Paso 2 (Pasarela Previa con Timeout Estricto de 3 Minutos):** Al no tener pase activo, se despliega la **Pasarela de Pago (Paywall)** con el temporizador tabular **03:00**:
     - `03:00` a `01:30`: Verde Esmeralda (`#30D158`) — Tiempo suficiente.
-    - `01:30` a `00:30`: Amarillo Ámbar (`#FFD60A`) — Atención.
-    - `00:30` a `00:00`: Rojo Carmesí (`#FF453A`) — Expiración inminente.
-    - Opción A: **Ticket de Mesa Única ($1.99 USD)** vía Lemon Squeezy / Apple Pay / Yape.
-    - Opción B: **Suscripción Pro Mensual ($9.99 USD/mes)**.
-    - _Regla de expiración:_ Marco tiene hasta 3 minutos para confirmar el pago. Si no lo hace, la orden caduca, la sala se cancela y se liberan las conexiones en el servidor (`CC222`).
-4. **Paso 4:** Marco paga $1.99 con Apple Pay / Yape en 3 segundos. El webhook firmado con HMAC-SHA256 valida la orden y activa la sala al instante.
-5. **Paso 5:** Los 10 jugadores mantienen presionado su botón en su propio teléfono. Las 10 pantallas empiezan a vibrar sincronizadas.
-6. **Paso 6:** Al llegar a cero, 9 teléfonos vibran suave y dicen _"A SALVO"_. El teléfono de Carlos vibra intensamente con un golpe seco y dice: _"TÚ PAGAS"_.
-7. **Paso 7 (Asentamiento Automático):** Como Carlos ingresó su nombre en el Paso 2, el WebSocket registra a "Carlos" directamente en el Libro de Deudas del anfitrión como el perdedor oficial de la ronda.
+    - `01:30` a `00:30`: Amarillo Ámbar (`#FFD60A`) — Atención moderada.
+    - `00:30` a `00:00`: Rojo Carmesí (`#FF453A`) con pulsos acústicos en los últimos 10 segundos.
+    - **Regla Inflexible de Expiración:** Si el contador llega a `00:00`, la pasarela se cierra automáticamente, revierte la selección a "1 Celular" y libera memoria.
+    - Marco selecciona entre:
+        - **Pase de Mesa (3 Horas):** `S/ 3.50 PEN` (~$0.99 USD).
+        - **WHO PAYS? PRO:** `S/ 9.90 PEN/mes` (~$2.99 USD).
+3. **Paso 3 (Desbloqueo & Generación de Sala):** Marco pulsa pagar vía Yape / Tarjeta / Apple Pay. La app emite el tono de éxito (`playSuccessChime`), asienta el pase activo en `localStorage` y da paso inmediato a la pantalla de **Mesa QR** con el código de sala `SALA 7F2A`.
+4. **Paso 4 (Conexión de Invitados):** Los demás comensales apuntan la cámara de su teléfono y entran a la PWA al instante.
+5. **Paso 5:** Todos mantienen presionado su botón en su propio teléfono; las pantallas vibran al unísono.
+6. **Paso 6:** Al resolverse, los teléfonos de los ganadores dicen _"A SALVO"_, y el perdedor recibe **"TÚ PAGAS"** con vibración intensa y registro automático en el Libro de Deudas.
