@@ -105,9 +105,9 @@ Cada aspecto técnico de WHO PAYS? está respaldado por las asignaturas del plan
 
 ### RF-03: Pasarela de Monetización Escalonada (Paywall con TTL Estricto)
 
-- **Opciones de Pago Disponibles:**
-    - **Pase de Mesa (3 Horas):** **S/ 3.50 PEN** (~$0.99 USD) para la salida de hoy.
-    - **WHO PAYS? PRO:** **S/ 9.90 PEN/mes** (~$2.99 USD) o $19.99 USD vitalicio con salas QR ilimitadas y cero anuncios.
+- **Opciones de Pago Disponibles (Valores Canónicos en USD):**
+    - **Pase de Mesa (3 Horas):** **$1.99 USD** (~S/ 7.16 PEN al tipo de cambio S/ 3.60) para la salida de hoy.
+    - **WHO PAYS? PRO:** **$9.99 USD/mes** con salas QR ilimitadas y cero publicidad.
 - **Ventana de Pago Estricta (TTL 3 Minutos) con Indicador Cromático Dinámico:**
     - Al abrirse el modal de la pasarela, se inicia una cuenta regresiva de **máximo 3:00 minutos (180 segundos)** visible con tipografía monoespaciada tabular `SF Mono`.
     - **Gradiente Dinámico de Urgencia (Apple HIG):**
@@ -121,7 +121,7 @@ Cada aspecto técnico de WHO PAYS? está respaldado por las asignaturas del plan
     - **Regla Estricta de Auto-Cierre por Expiración:**
         - Al llegar el contador a **00:00**, la pasarela se **cierra automáticamente**, cancela la reserva efímera, devuelve la interfaz a modo local ("1 Celular") y emite una notificación táctil/visual de sesión expirada.
 - **Integraciones de Pago:**
-    - Pasarelas Rápidas: Yape / Plin, Tarjetas de Débito/Crédito y Apple Pay / Google Pay.
+    - Pasarelas Rápidas: Lemon Cash (CCI / Tag / Tarjeta), Yape (BCP), Tarjetas de Débito/Crédito y Apple Pay.
 
 ### RF-04: El Libro de Deudas Social (Función Pro)
 

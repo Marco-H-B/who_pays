@@ -31,7 +31,7 @@ stateDiagram-v2
         Idle --> CheckMesaAccess: Toca "Mesa QR"
         CheckMesaAccess --> LobbyWaiting: Posee Pase Activo o Membresía PRO
         CheckMesaAccess --> PaywallModal: No posee pase (Abre Pasarela con TTL 3:00 min)
-        PaywallModal --> LobbyWaiting: Pago confirmado (S/ 3.50 Pase 3h o S/ 9.90 PRO)
+        PaywallModal --> LobbyWaiting: Pago confirmado ($1.99 Pase 3h o $9.99 PRO)
         PaywallModal --> Idle: Contador llega a 00:00 (Auto-cierre y cancelación de sala)
         PaywallModal --> Idle: Toca "Volver a 1 Celular"
         LobbyWaiting --> SynchronizedCountdown: Anfitrión pulsa "Iniciar Veredicto"
@@ -64,9 +64,9 @@ stateDiagram-v2
     - `00:30` a `00:00`: Rojo Carmesí (`#FF453A`) con pulsos acústicos en los últimos 10 segundos.
     - **Regla Inflexible de Expiración:** Si el contador llega a `00:00`, la pasarela se cierra automáticamente, revierte la selección a "1 Celular" y libera memoria.
     - Marco selecciona entre:
-        - **Pase de Mesa (3 Horas):** `S/ 3.50 PEN` (~$0.99 USD).
-        - **WHO PAYS? PRO:** `S/ 9.90 PEN/mes` (~$2.99 USD).
-3. **Paso 3 (Desbloqueo & Generación de Sala):** Marco pulsa pagar vía Yape / Tarjeta / Apple Pay. La app emite el tono de éxito (`playSuccessChime`), asienta el pase activo en `localStorage` y da paso inmediato a la pantalla de **Mesa QR** con el código de sala `SALA 7F2A`.
+        - **Pase de Mesa (3 Horas):** `$1.99 USD` (~S/ 7.16).
+        - **WHO PAYS? PRO:** `$9.99 USD/mes`.
+3. **Paso 3 (Desbloqueo & Generación de Sala):** Marco pulsa pagar vía Lemon Cash / Yape / Tarjeta / Apple Pay. La app emite el tono de éxito (`playSuccessChime`), asienta el pase activo en `localStorage` y da paso inmediato a la pantalla de **Mesa QR** con el código de sala `SALA 7F2A`.
 4. **Paso 4 (Conexión de Invitados):** Los demás comensales apuntan la cámara de su teléfono y entran a la PWA al instante.
 5. **Paso 5:** Todos mantienen presionado su botón en su propio teléfono; las pantallas vibran al unísono.
 6. **Paso 6:** Al resolverse, los teléfonos de los ganadores dicen _"A SALVO"_, y el perdedor recibe **"TÚ PAGAS"** con vibración intensa y registro automático en el Libro de Deudas.
