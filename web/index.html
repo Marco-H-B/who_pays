@@ -1,1416 +1,1567 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>WHO PAYS?</title>
-    <!-- Google Identity Services SDK -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-        body, html {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #08090A;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
-            color: #FFFFFF;
-        }
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+        />
+        <title>WHO PAYS?</title>
+        <!-- Google Identity Services SDK -->
+        <script src="https://accounts.google.com/gsi/client" async defer></script>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+                user-select: none;
+                -webkit-user-select: none;
+            }
+            body,
+            html {
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                background-color: #08090a;
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+                color: #ffffff;
+            }
 
-        /* Lienzo interactivo */
-        #canvas {
-            display: block;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            touch-action: none;
-        }
+            /* Lienzo interactivo */
+            #canvas {
+                display: block;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 1;
+                touch-action: none;
+            }
 
-        /* Barra Superior debajo de la Isla Dinámica */
-        #header-container {
-            position: absolute;
-            top: max(calc(env(safe-area-inset-top) + 14px), 58px);
-            left: 0;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 16px;
-            z-index: 50;
-            pointer-events: none;
-        }
-        #top-bar {
-            display: flex;
-            background: rgba(22, 23, 27, 0.85);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            padding: 3px;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            pointer-events: auto;
-        }
-        .mode-btn {
-            background: transparent;
-            border: none;
-            color: #8E8E93;
-            padding: 6px 14px;
-            font-size: 13px;
-            font-weight: 500;
-            border-radius: 16px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        .mode-btn.active {
-            background: #2C2D33;
-            color: #FFFFFF;
-            font-weight: 600;
-        }
+            /* Barra Superior centrada debajo de la Isla Dinámica (iPhone 15 / Apple HIG) */
+            #header-container {
+                position: absolute;
+                top: max(calc(env(safe-area-inset-top) + 14px), 58px);
+                left: 0;
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0 16px;
+                z-index: 50;
+                pointer-events: none;
+            }
+            #top-bar {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                background: rgba(22, 23, 27, 0.88);
+                backdrop-filter: blur(25px);
+                -webkit-backdrop-filter: blur(25px);
+                padding: 4px;
+                border-radius: 24px;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                pointer-events: auto;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            }
+            .mode-btn {
+                background: transparent;
+                border: none;
+                color: #8e8e93;
+                padding: 7px 16px;
+                font-size: 13px;
+                font-weight: 500;
+                border-radius: 18px;
+                cursor: pointer;
+                transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                min-height: 36px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .mode-btn.active {
+                background: #2c2d33;
+                color: #ffffff;
+                font-weight: 600;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+            }
+            .mode-btn:focus-visible,
+            #auth-btn:focus-visible {
+                outline: 2px solid #ffffff;
+                outline-offset: 2px;
+            }
 
-        #auth-btn {
-            background: rgba(22, 23, 27, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 18px;
-            padding: 6px 12px;
-            font-size: 12px;
-            font-weight: 500;
-            color: #E5E5EA;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            pointer-events: auto;
-            cursor: pointer;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-        }
-        .auth-avatar-mini {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: #3A3D45;
-            color: #FFF;
-            font-size: 10px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-        .auth-avatar-mini img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+            #auth-btn {
+                background: rgba(255, 255, 255, 0.06);
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 50%;
+                width: 32px;
+                height: 32px;
+                padding: 0;
+                margin-left: 2px;
+                margin-right: 2px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                pointer-events: auto;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+            #auth-btn:hover {
+                background: rgba(255, 255, 255, 0.12);
+            }
+            #auth-btn:active {
+                transform: scale(0.92);
+            }
+            .auth-avatar-mini {
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                background: #3a3d45;
+                color: #fff;
+                font-size: 10px;
+                font-weight: 700;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+            }
+            .auth-avatar-mini img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
 
-        /* Indicación central en reposo */
-        #hint {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            color: rgba(255, 255, 255, 0.35);
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-            z-index: 2;
-        }
-        #hint h1 {
-            font-size: 24px;
-            font-weight: 500;
-            letter-spacing: -0.02em;
-            margin-bottom: 4px;
-        }
-        #hint p {
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.2);
-        }
+            /* Indicación central en reposo */
+            #hint {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                text-align: center;
+                color: rgba(255, 255, 255, 0.35);
+                pointer-events: none;
+                transition: opacity 0.3s ease;
+                z-index: 2;
+            }
+            #hint h1 {
+                font-size: 24px;
+                font-weight: 500;
+                letter-spacing: -0.02em;
+                margin-bottom: 4px;
+            }
+            #hint p {
+                font-size: 13px;
+                color: rgba(255, 255, 255, 0.2);
+            }
 
-        /* Modales Generales (Minimalistas estilo Cupertino) */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            z-index: 100;
-            touch-action: auto;
-        }
-        .modal-overlay.visible {
-            display: flex;
-        }
-        .modal-card {
-            background: #121316;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 22px;
-            padding: 22px 18px;
-            text-align: center;
-            max-width: 320px;
-            width: 100%;
-            position: relative;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
-        }
-        .modal-close-btn {
-            position: absolute;
-            top: 14px;
-            right: 14px;
-            background: rgba(255, 255, 255, 0.08);
-            border: none;
-            color: #8E8E93;
-            width: 26px;
-            height: 26px;
-            border-radius: 50%;
-            font-size: 12px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+            /* Modales Generales (Minimalistas estilo Cupertino) */
+            .modal-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.7);
+                backdrop-filter: blur(25px);
+                -webkit-backdrop-filter: blur(25px);
+                display: none;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+                z-index: 100;
+                touch-action: auto;
+            }
+            .modal-overlay.visible {
+                display: flex;
+            }
+            .modal-card {
+                background: #121316;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 22px;
+                padding: 22px 18px;
+                text-align: center;
+                max-width: 320px;
+                width: 100%;
+                position: relative;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
+            }
+            .modal-close-btn {
+                position: absolute;
+                top: 14px;
+                right: 14px;
+                background: rgba(255, 255, 255, 0.08);
+                border: none;
+                color: #8e8e93;
+                width: 26px;
+                height: 26px;
+                border-radius: 50%;
+                font-size: 12px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
 
-        /* Action Sheet Bottom Drawer (¿Quién perdió?) */
-        #action-sheet {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 90;
-            display: none;
-            touch-action: auto;
-        }
-        .sheet-backdrop {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            opacity: 0;
-            transition: opacity 0.25s ease;
-        }
-        .sheet-content {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: #141519;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 24px 24px 0 0;
-            padding: 16px 20px calc(20px + env(safe-area-inset-bottom, 10px)) 20px;
-            transform: translateY(100%);
-            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        #action-sheet.visible .sheet-backdrop {
-            opacity: 1;
-        }
-        #action-sheet.visible .sheet-content {
-            transform: translateY(0%);
-        }
-        .sheet-handle {
-            width: 36px;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 2px;
-            margin: 0 auto 12px auto;
-        }
-        .sheet-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 14px;
-        }
-        .sheet-title {
-            font-size: 18px;
-            font-weight: 600;
-        }
+            /* Action Sheet Bottom Drawer (¿Quién perdió?) */
+            #action-sheet {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 90;
+                display: none;
+                touch-action: auto;
+            }
+            .sheet-backdrop {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.6);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                opacity: 0;
+                transition: opacity 0.25s ease;
+            }
+            .sheet-content {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                background: #141519;
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 24px 24px 0 0;
+                padding: 16px 20px calc(20px + env(safe-area-inset-bottom, 10px)) 20px;
+                transform: translateY(100%);
+                transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            #action-sheet.visible .sheet-backdrop {
+                opacity: 1;
+            }
+            #action-sheet.visible .sheet-content {
+                transform: translateY(0%);
+            }
+            .sheet-handle {
+                width: 36px;
+                height: 4px;
+                background: rgba(255, 255, 255, 0.2);
+                border-radius: 2px;
+                margin: 0 auto 12px auto;
+            }
+            .sheet-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 14px;
+            }
+            .sheet-title {
+                font-size: 18px;
+                font-weight: 600;
+            }
 
-        /* Controles de Formulario */
-        .input-group {
-            margin-bottom: 12px;
-            text-align: left;
-        }
-        .input-group label {
-            display: block;
-            font-size: 11px;
-            color: #8E8E93;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        .input-group input {
-            width: 100%;
-            background: #090A0D;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #FFF;
-            padding: 12px 14px;
-            border-radius: 12px;
-            font-size: 15px;
-            outline: none;
-            -webkit-appearance: none;
-        }
-        .chips-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-bottom: 10px;
-        }
-        .chip {
-            background: #202227;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 5px 12px;
-            border-radius: 14px;
-            font-size: 12px;
-            color: #DDD;
-            cursor: pointer;
-        }
+            /* Controles de Formulario */
+            .input-group {
+                margin-bottom: 12px;
+                text-align: left;
+            }
+            .input-group label {
+                display: block;
+                font-size: 11px;
+                color: #8e8e93;
+                margin-bottom: 5px;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+            .input-group input {
+                width: 100%;
+                background: #090a0d;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                color: #fff;
+                padding: 12px 14px;
+                border-radius: 12px;
+                font-size: 15px;
+                outline: none;
+                -webkit-appearance: none;
+            }
+            .chips-container {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+                margin-bottom: 10px;
+            }
+            .chip {
+                background: #202227;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                padding: 5px 12px;
+                border-radius: 14px;
+                font-size: 12px;
+                color: #ddd;
+                cursor: pointer;
+            }
 
-        /* Botones Generales */
-        .btn-primary {
-            width: 100%;
-            background: #2C2D33;
-            color: #FFF;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            padding: 13px;
-            border-radius: 14px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 4px;
-        }
-        .btn-primary:active {
-            background: #3A3C44;
-        }
-        .btn-secondary {
-            width: 100%;
-            background: transparent;
-            color: #8E8E93;
-            border: none;
-            padding: 10px;
-            font-size: 13px;
-            margin-top: 4px;
-            cursor: pointer;
-        }
-        .btn-danger {
-            width: 100%;
-            background: rgba(255, 69, 58, 0.12);
-            color: #FF453A;
-            border: 1px solid rgba(255, 69, 58, 0.25);
-            padding: 11px;
-            border-radius: 12px;
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        .btn-danger:active {
-            background: rgba(255, 69, 58, 0.25);
-        }
+            /* Botones Generales */
+            .btn-primary {
+                width: 100%;
+                background: #2c2d33;
+                color: #fff;
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                padding: 13px;
+                border-radius: 14px;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                margin-top: 4px;
+            }
+            .btn-primary:active {
+                background: #3a3c44;
+            }
+            .btn-secondary {
+                width: 100%;
+                background: transparent;
+                color: #8e8e93;
+                border: none;
+                padding: 10px;
+                font-size: 13px;
+                margin-top: 4px;
+                cursor: pointer;
+            }
+            .btn-danger {
+                width: 100%;
+                background: rgba(255, 69, 58, 0.12);
+                color: #ff453a;
+                border: 1px solid rgba(255, 69, 58, 0.25);
+                padding: 11px;
+                border-radius: 12px;
+                font-size: 13px;
+                font-weight: 500;
+                cursor: pointer;
+                margin-top: 10px;
+            }
+            .btn-danger:active {
+                background: rgba(255, 69, 58, 0.25);
+            }
 
-        /* Pasarela de Pago Minimalista */
-        .paywall-badge {
-            display: inline-block;
-            font-size: 10px;
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: #FF9F0A;
-            background: rgba(255, 159, 10, 0.12);
-            padding: 3px 8px;
-            border-radius: 10px;
-            margin-bottom: 6px;
-        }
-        .paywall-timer-wrap {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 12px;
-            padding: 8px 12px;
-            margin: 12px 0;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .paywall-timer-label {
-            font-size: 11px;
-            color: #8E8E93;
-        }
-        .paywall-timer-badge {
-            font-family: monospace;
-            font-size: 15px;
-            font-weight: 700;
-            padding: 2px 7px;
-            border-radius: 6px;
-            border: 1px solid #30D158;
-            color: #30D158;
-            transition: all 0.3s ease;
-        }
+            /* Pasarela de Pago Minimalista */
+            .paywall-badge {
+                display: inline-block;
+                font-size: 10px;
+                font-weight: 600;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: #ff9f0a;
+                background: rgba(255, 159, 10, 0.12);
+                padding: 3px 8px;
+                border-radius: 10px;
+                margin-bottom: 6px;
+            }
+            .paywall-timer-wrap {
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 12px;
+                padding: 8px 12px;
+                margin: 12px 0;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+            .paywall-timer-label {
+                font-size: 11px;
+                color: #8e8e93;
+            }
+            .paywall-timer-badge {
+                font-family: monospace;
+                font-size: 15px;
+                font-weight: 700;
+                padding: 2px 7px;
+                border-radius: 6px;
+                border: 1px solid #30d158;
+                color: #30d158;
+                transition: all 0.3s ease;
+            }
 
-        .plan-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-        .plan-card {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 14px;
-            padding: 10px 12px;
-            text-align: left;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.2s ease;
-        }
-        .plan-card.selected {
-            border-color: #0A84FF;
-            background: rgba(10, 132, 255, 0.1);
-        }
-        .plan-card h4 {
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 2px;
-        }
-        .plan-card p {
-            font-size: 11px;
-            color: #8E8E93;
-        }
-        .plan-price-main {
-            font-size: 15px;
-            font-weight: 700;
-            color: #FFFFFF;
-            text-align: right;
-        }
+            .plan-grid {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                margin-bottom: 12px;
+            }
+            .plan-card {
+                background: rgba(255, 255, 255, 0.02);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 14px;
+                padding: 10px 12px;
+                text-align: left;
+                cursor: pointer;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                transition: all 0.2s ease;
+            }
+            .plan-card.selected {
+                border-color: #0a84ff;
+                background: rgba(10, 132, 255, 0.1);
+            }
+            .plan-card h4 {
+                font-size: 13px;
+                font-weight: 600;
+                margin-bottom: 2px;
+            }
+            .plan-card p {
+                font-size: 11px;
+                color: #8e8e93;
+            }
+            .plan-price-main {
+                font-size: 15px;
+                font-weight: 700;
+                color: #ffffff;
+                text-align: right;
+            }
 
-        .payment-methods {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 12px;
-        }
-        .method-chip {
-            flex: 1;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 10px;
-            padding: 7px 2px;
-            font-size: 11px;
-            color: #8E8E93;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        .method-chip.selected {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: #FFF;
-            color: #FFF;
-            font-weight: 600;
-        }
+            .payment-methods {
+                display: flex;
+                gap: 6px;
+                margin-bottom: 12px;
+            }
+            .method-chip {
+                flex: 1;
+                background: rgba(255, 255, 255, 0.04);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 10px;
+                padding: 7px 2px;
+                font-size: 11px;
+                color: #8e8e93;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+            .method-chip.selected {
+                background: rgba(255, 255, 255, 0.15);
+                border-color: #fff;
+                color: #fff;
+                font-weight: 600;
+            }
 
-        /* Modal QR */
-        .qr-img {
-            width: 170px;
-            height: 170px;
-            border-radius: 10px;
-            background: #FFF;
-            margin: 14px auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
+            /* Modal QR */
+            .qr-img {
+                width: 170px;
+                height: 170px;
+                border-radius: 10px;
+                background: #fff;
+                margin: 14px auto;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+            }
 
-        /* Perfil de Usuario */
-        .profile-avatar-big {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: #2C2D33;
-            color: #FFF;
-            font-size: 20px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 10px auto;
-            overflow: hidden;
-        }
-        .profile-avatar-big img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .profile-stats {
-            display: flex;
-            gap: 8px;
-            margin: 14px 0;
-        }
-        .stat-box {
-            flex: 1;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 10px;
-            padding: 8px 4px;
-        }
-        .stat-num {
-            display: block;
-            font-size: 16px;
-            font-weight: 700;
-            color: #FFFFFF;
-        }
-        .stat-lbl {
-            font-size: 10px;
-            color: #8E8E93;
-        }
+            /* Perfil de Usuario */
+            .profile-avatar-big {
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+                background: #2c2d33;
+                color: #fff;
+                font-size: 20px;
+                font-weight: 700;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto 10px auto;
+                overflow: hidden;
+            }
+            .profile-avatar-big img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+            .profile-stats {
+                display: flex;
+                gap: 8px;
+                margin: 14px 0;
+            }
+            .stat-box {
+                flex: 1;
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 10px;
+                padding: 8px 4px;
+            }
+            .stat-num {
+                display: block;
+                font-size: 16px;
+                font-weight: 700;
+                color: #ffffff;
+            }
+            .stat-lbl {
+                font-size: 10px;
+                color: #8e8e93;
+            }
 
-        /* Botón de Google Oficial */
-        .btn-google {
-            background: #FFFFFF;
-            color: #1F1F1F;
-            border: none;
-            width: 100%;
-            padding: 12px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            cursor: pointer;
-            margin-top: 14px;
-        }
-        .btn-google:active {
-            opacity: 0.85;
-        }
+            /* Botón de Google Oficial */
+            .btn-google {
+                background: #ffffff;
+                color: #1f1f1f;
+                border: none;
+                width: 100%;
+                padding: 12px;
+                border-radius: 12px;
+                font-size: 14px;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                cursor: pointer;
+                margin-top: 14px;
+            }
+            .btn-google:active {
+                opacity: 0.85;
+            }
 
-        /* Notificación Toast */
-        #toast {
-            position: fixed;
-            top: max(calc(env(safe-area-inset-top) + 20px), 70px);
-            left: 50%;
-            transform: translateX(-50%) translateY(-60px);
-            background: rgba(26, 27, 32, 0.95);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            color: #FFF;
-            padding: 8px 16px;
-            border-radius: 18px;
-            font-size: 12px;
-            font-weight: 500;
-            z-index: 200;
-            pointer-events: none;
-            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            white-space: nowrap;
-        }
-        #toast.visible {
-            transform: translateX(-50%) translateY(0);
-        }
-    </style>
-</head>
-<body>
-    <div id="toast"></div>
+            /* Notificación Toast (Oculto 100% en reposo para evitar cápsulas fantasma) */
+            #toast {
+                position: fixed;
+                top: max(calc(env(safe-area-inset-top) + 20px), 70px);
+                left: 50%;
+                transform: translateX(-50%) translateY(-20px);
+                opacity: 0;
+                visibility: hidden;
+                background: rgba(26, 27, 32, 0.95);
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                color: #fff;
+                padding: 8px 16px;
+                border-radius: 18px;
+                font-size: 12px;
+                font-weight: 500;
+                z-index: 200;
+                pointer-events: none;
+                transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.25s;
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                white-space: nowrap;
+            }
+            #toast.visible {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+                visibility: visible;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="toast" role="status" aria-live="polite"></div>
 
-    <div id="header-container">
-        <div id="top-bar">
-            <button id="btn-mode-local" class="mode-btn active" onclick="switchMode('local')">1 Celular</button>
-            <button id="btn-mode-qr" class="mode-btn" onclick="switchMode('qr')">Mesa QR</button>
-        </div>
-
-        <button id="auth-btn" onclick="openAuthModal()">
-            <div id="user-avatar-mini" class="auth-avatar-mini">M</div>
-            <span id="user-display">Invitado</span>
-        </button>
-    </div>
-
-    <div id="hint">
-        <h1>Pon tu dedo</h1>
-        <p>2 a 5 jugadores en pantalla</p>
-    </div>
-
-    <canvas id="canvas"></canvas>
-
-    <!-- Micro-Hoja (Action Sheet) ¿Quién perdió? -->
-    <div id="action-sheet">
-        <div class="sheet-backdrop" onclick="dismissSheet()"></div>
-        <div class="sheet-content">
-            <div class="sheet-handle"></div>
-            <div class="sheet-header">
-                <span class="sheet-title">¿Quién perdió?</span>
-                <button class="modal-close-btn" style="position: static;" onclick="dismissSheet()">✕</button>
-            </div>
-
-            <div id="chips-section" class="input-group" style="display: none;">
-                <label>Amigos Recientes</label>
-                <div id="chips-list" class="chips-container"></div>
-            </div>
-
-            <div class="input-group">
-                <label>Nombre del Perdedor</label>
-                <input type="text" id="loser-name-input" placeholder="Escribe el nombre..." />
-            </div>
-
-            <div class="input-group">
-                <label>Monto de la cuenta (USD - Opcional)</label>
-                <input type="number" id="bill-amount-input" placeholder="$0.00" />
-            </div>
-
-            <button class="btn-primary" onclick="saveDebt()">Guardar Deuda</button>
-            <button class="btn-secondary" onclick="dismissSheet()">Volver a Jugar</button>
-        </div>
-    </div>
-
-    <!-- Pasarela de Pago (Paywall) con TTL de 3 Minutos -->
-    <div id="paywall-modal" class="modal-overlay">
-        <div class="modal-card">
-            <button class="modal-close-btn" onclick="closePaywallModal()">✕</button>
-            <div class="paywall-badge">Mesa Multidispositivo</div>
-            <h2 style="font-size: 19px; font-weight: 600; margin-bottom: 2px;">Mesa QR en Vivo</h2>
-            <p style="font-size: 12px; color: #8E8E93;">Sincroniza hasta 10 celulares en tu mesa en tiempo real.</p>
-
-            <div class="paywall-timer-wrap">
-                <span class="paywall-timer-label">Reserva de sala activa por:</span>
-                <span id="paywall-timer-box" class="paywall-timer-badge">03:00</span>
-            </div>
-
-            <div class="plan-grid">
-                <div id="plan-pass" class="plan-card selected" onclick="selectPlan('pass')">
-                    <div>
-                        <h4>Pase de Mesa</h4>
-                        <p>Válido por 3 horas continuas</p>
-                    </div>
-                    <div class="plan-price-main">$1.99</div>
-                </div>
-
-                <div id="plan-pro" class="plan-card" onclick="selectPlan('pro')">
-                    <div>
-                        <h4>WHO PAYS? PRO</h4>
-                        <p>Mesas ilimitadas + Cero anuncios</p>
-                    </div>
-                    <div class="plan-price-main">$9.99 <span style="font-size: 10px; color: #8E8E93;">/mes</span></div>
-                </div>
-            </div>
-
-            <div style="font-size: 10px; color: #8E8E93; text-align: left; margin-bottom: 6px; text-transform: uppercase;">Método de Pago</div>
-            <div class="payment-methods">
-                <div id="method-lemon" class="method-chip selected" onclick="selectMethod('lemon')">Lemon</div>
-                <div id="method-yape" class="method-chip" onclick="selectMethod('yape')">Yape</div>
-                <div id="method-card" class="method-chip" onclick="selectMethod('card')">Tarjeta</div>
-                <div id="method-applepay" class="method-chip" onclick="selectMethod('applepay')">Apple Pay</div>
-            </div>
-
-            <!-- QR Dinámico del Método Seleccionado -->
-            <div id="payment-qr-container" style="margin: 10px auto; width: 140px; height: 140px; border-radius: 12px; background: #FFF; padding: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,0.4);">
-                <img id="payment-qr-img" src="assets/lemon-qr.jpeg" style="width: 100%; height: 100%; object-fit: contain;" alt="QR de Pago" />
-            </div>
-            <div id="payment-qr-label" style="font-size: 11px; color: #8E8E93; margin-bottom: 12px;">Escanea con tu app Lemon ($1.99 USD)</div>
-
-            <button id="btn-pay-action" class="btn-primary" onclick="executePayment()">Pagar $1.99 y Desbloquear Mesa</button>
-            <button class="btn-secondary" onclick="closePaywallModal()">Volver a 1 Celular</button>
-        </div>
-    </div>
-
-    <!-- Modal de Mesa QR Desbloqueada -->
-    <div id="qr-modal" class="modal-overlay">
-        <div class="modal-card">
-            <button class="modal-close-btn" onclick="switchMode('local')">✕</button>
-            <div style="font-size: 11px; color: #8E8E93; text-transform: uppercase; letter-spacing: 0.05em;">Modo Varios Celulares</div>
-            <div style="font-family: monospace; font-size: 22px; letter-spacing: 0.15em; margin: 4px 0;">SALA 7F2A</div>
-            <p style="font-size: 12px; color: rgba(255,255,255,0.6);">Escanea con la cámara de tu teléfono para unirte</p>
-
-            <div class="qr-img">
-                <img id="qr-image" src="" alt="QR Sala" style="width: 100%; height: 100%;" />
-            </div>
-
-            <div style="font-size: 11px; font-weight: 600; color: #30D158; margin-bottom: 12px;">Pase de Mesa Activo</div>
-            <button class="btn-primary" onclick="switchMode('local')">Volver a 1 Celular</button>
-        </div>
-    </div>
-
-    <!-- Modal de Perfil & Google Sign-In Real -->
-    <div id="auth-modal" class="modal-overlay">
-        <div class="modal-card">
-            <button class="modal-close-btn" onclick="closeAuthModal()">✕</button>
-
-            <!-- Vista 1: Login con Google Real -->
-            <div id="auth-view-login">
-                <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 4px;">Tu Perfil Social</h2>
-                <p style="font-size: 12px; color: #8E8E93; margin-bottom: 14px;">Inicia sesión con tu cuenta real de Google para sincronizar deudas y pases.</p>
-
-                <button class="btn-google" onclick="loginWithGoogleOAuth()">
-                    <svg width="18" height="18" viewBox="0 0 18 18">
-                        <path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.49h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.92c1.71-1.57 2.68-3.89 2.68-6.62z"/>
-                        <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.83.87-3.04.87-2.34 0-4.33-1.58-5.04-3.71H.95v2.33C2.43 15.98 5.48 18 9 18z"/>
-                        <path fill="#FBBC05" d="M3.96 10.72A5.41 5.41 0 0 1 3.68 9c0-.6.1-1.18.28-1.72V4.95H.95A9.01 9.01 0 0 0 0 9c0 1.45.35 2.82.95 4.05l3.01-2.33z"/>
-                        <path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.59C13.46.89 11.43 0 9 0 5.48 0 2.43 2.02.95 4.95l3.01 2.33c.71-2.13 2.7-3.7 5.04-3.7z"/>
-                    </svg>
-                    Iniciar Sesión con Google
+        <div id="header-container">
+            <div id="top-bar" role="tablist" aria-label="Selector de modo de juego y perfil">
+                <button id="btn-mode-local" class="mode-btn active" role="tab" aria-selected="true" onclick="switchMode('local')">1 Celular</button>
+                <button id="btn-mode-qr" class="mode-btn" role="tab" aria-selected="false" onclick="switchMode('qr')">Mesa QR</button>
+                <button id="auth-btn" role="button" aria-label="Perfil y autenticación de usuario" title="Perfil y cuenta" onclick="openAuthModal()">
+                    <div id="user-avatar-mini" class="auth-avatar-mini">M</div>
                 </button>
-
-                <button class="btn-secondary" onclick="toggleClientIdConfig()" style="font-size: 11px; margin-top: 10px; color: #636366;">
-                    ⚙️ Configurar Google Client ID
-                </button>
-
-                <div id="client-id-config-box" style="display: none; margin-top: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 10px; text-align: left;">
-                    <label style="font-size: 10px; color: #8E8E93; display: block; margin-bottom: 4px;">Tu Web Client ID (Google Cloud Console)</label>
-                    <input type="text" id="custom-client-id-input" placeholder="xxxx.apps.googleusercontent.com" style="width: 100%; background: #090A0D; border: 1px solid rgba(255,255,255,0.1); color: #FFF; padding: 8px 10px; border-radius: 8px; font-size: 11px; margin-bottom: 8px; outline: none;" />
-                    <button class="btn-primary" onclick="saveCustomClientId()" style="padding: 8px; font-size: 12px;">Guardar Client ID</button>
-                </div>
-
-                <button class="btn-secondary" onclick="closeAuthModal()" style="margin-top: 8px;">Continuar como Invitado</button>
-            </div>
-
-            <!-- Vista 2: Perfil Si Ya Inició Sesión -->
-            <div id="auth-view-profile" style="display: none;">
-                <div id="profile-avatar-big" class="profile-avatar-big">M</div>
-                <h3 id="profile-user-name" style="font-size: 17px; margin-bottom: 2px;">Marco Huamani</h3>
-                <p id="profile-user-email" style="font-size: 12px; color: #8E8E93; margin-bottom: 12px;">marcoxhbx18@gmail.com</p>
-
-                <div class="profile-stats">
-                    <div class="stat-box">
-                        <span id="stat-debts-count" class="stat-num">0</span>
-                        <span class="stat-lbl">Deudas</span>
-                    </div>
-                    <div class="stat-box">
-                        <span id="stat-tier" class="stat-num" style="color: #30D158;">GRATIS</span>
-                        <span class="stat-lbl">Membresía</span>
-                    </div>
-                </div>
-
-                <button class="btn-secondary" onclick="logoutUser()" style="border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px;">Cerrar Sesión</button>
-                <button class="btn-danger" onclick="deleteAccountAndData()">Eliminar Mi Cuenta y Datos</button>
             </div>
         </div>
-    </div>
 
-    <script>
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        const hint = document.getElementById('hint');
-        const sheet = document.getElementById('action-sheet');
-        const paywallModal = document.getElementById('paywall-modal');
-        const qrModal = document.getElementById('qr-modal');
-        const authModal = document.getElementById('auth-modal');
-        const loserInput = document.getElementById('loser-name-input');
-        const amountInput = document.getElementById('bill-amount-input');
-        const paywallTimerBox = document.getElementById('paywall-timer-box');
-        const qrImg = document.getElementById('qr-image');
-        const chipsSection = document.getElementById('chips-section');
-        const chipsList = document.getElementById('chips-list');
-        const userDisplay = document.getElementById('user-display');
-        const userAvatarMini = document.getElementById('user-avatar-mini');
-        const toast = document.getElementById('toast');
+        <div id="hint">
+            <h1>Pon tu dedo</h1>
+            <p>2 a 5 jugadores en pantalla</p>
+        </div>
 
-        let width = window.innerWidth;
-        let height = window.innerHeight;
+        <canvas id="canvas"></canvas>
 
-        function resize() {
-            width = window.innerWidth;
-            height = window.innerHeight;
-            canvas.width = width * window.devicePixelRatio;
-            canvas.height = height * window.devicePixelRatio;
-            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-        }
-        window.addEventListener('resize', resize);
-        resize();
+        <!-- Micro-Hoja (Action Sheet) ¿Quién perdió? -->
+        <div id="action-sheet">
+            <div class="sheet-backdrop" onclick="dismissSheet()"></div>
+            <div class="sheet-content">
+                <div class="sheet-handle"></div>
+                <div class="sheet-header">
+                    <span class="sheet-title">¿Quién perdió?</span>
+                    <button class="modal-close-btn" style="position: static" onclick="dismissSheet()">✕</button>
+                </div>
 
-        function showToast(msg) {
-            toast.innerText = msg;
-            toast.classList.add('visible');
-            setTimeout(() => {
-                toast.classList.remove('visible');
-            }, 2600);
-        }
+                <div id="chips-section" class="input-group" style="display: none">
+                    <label>Amigos Recientes</label>
+                    <div id="chips-list" class="chips-container"></div>
+                </div>
 
-        // ==========================================
-        // ESTADOS DE MÁQUINA & EVENTOS TÁCTILES
-        // ==========================================
-        const STATE = { IDLE: 'IDLE', TENSION: 'TENSION', OUTCOME: 'OUTCOME' };
-        let gameState = STATE.IDLE;
-        let tensionStart = 0;
-        let loserId = null;
-        let frozenLoserPos = null;
-        let previousFingerCount = 0;
+                <div class="input-group">
+                    <label>Nombre del Perdedor</label>
+                    <input type="text" id="loser-name-input" placeholder="Escribe el nombre..." />
+                </div>
 
-        const touches = new Map();
+                <div class="input-group">
+                    <label>Monto de la cuenta (USD - Opcional)</label>
+                    <input type="number" id="bill-amount-input" placeholder="$0.00" />
+                </div>
 
-        let audioCtx = null;
-        function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                <button class="btn-primary" onclick="saveDebt()">Guardar Deuda</button>
+                <button class="btn-secondary" onclick="dismissSheet()">Volver a Jugar</button>
+            </div>
+        </div>
+
+        <!-- Pasarela de Pago (Paywall) con TTL de 3 Minutos -->
+        <div id="paywall-modal" class="modal-overlay">
+            <div class="modal-card">
+                <button class="modal-close-btn" onclick="closePaywallModal()">✕</button>
+                <div class="paywall-badge">Mesa Multidispositivo</div>
+                <h2 style="font-size: 19px; font-weight: 600; margin-bottom: 2px">Mesa QR en Vivo</h2>
+                <p style="font-size: 12px; color: #8e8e93">Sincroniza hasta 10 celulares en tu mesa en tiempo real.</p>
+
+                <div class="paywall-timer-wrap">
+                    <span class="paywall-timer-label">Reserva de sala activa por:</span>
+                    <span id="paywall-timer-box" class="paywall-timer-badge">03:00</span>
+                </div>
+
+                <div class="plan-grid">
+                    <div id="plan-pass" class="plan-card selected" onclick="selectPlan('pass')">
+                        <div>
+                            <h4>Pase de Mesa</h4>
+                            <p>Válido por 3 horas continuas</p>
+                        </div>
+                        <div class="plan-price-main">$1.99</div>
+                    </div>
+
+                    <div id="plan-pro" class="plan-card" onclick="selectPlan('pro')">
+                        <div>
+                            <h4>WHO PAYS? PRO</h4>
+                            <p>Mesas ilimitadas + Cero anuncios</p>
+                        </div>
+                        <div class="plan-price-main">
+                            $9.99 <span style="font-size: 10px; color: #8e8e93">/mes</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    style="
+                        font-size: 10px;
+                        color: #8e8e93;
+                        text-align: left;
+                        margin-bottom: 6px;
+                        text-transform: uppercase;
+                    "
+                >
+                    Método de Pago
+                </div>
+                <div class="payment-methods">
+                    <div id="method-lemon" class="method-chip selected" onclick="selectMethod('lemon')">Lemon</div>
+                    <div id="method-yape" class="method-chip" onclick="selectMethod('yape')">Yape</div>
+                    <div id="method-card" class="method-chip" onclick="selectMethod('card')">Tarjeta</div>
+                    <div id="method-applepay" class="method-chip" onclick="selectMethod('applepay')">Apple Pay</div>
+                </div>
+
+                <!-- QR Dinámico del Método Seleccionado -->
+                <div
+                    id="payment-qr-container"
+                    style="
+                        margin: 10px auto;
+                        width: 140px;
+                        height: 140px;
+                        border-radius: 12px;
+                        background: #fff;
+                        padding: 6px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        overflow: hidden;
+                        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+                    "
+                >
+                    <img
+                        id="payment-qr-img"
+                        src="assets/lemon-qr.jpeg"
+                        style="width: 100%; height: 100%; object-fit: contain"
+                        alt="QR de Pago"
+                    />
+                </div>
+                <div id="payment-qr-label" style="font-size: 11px; color: #8e8e93; margin-bottom: 12px">
+                    Escanea con tu app Lemon ($1.99 USD)
+                </div>
+
+                <button id="btn-pay-action" class="btn-primary" onclick="executePayment()">
+                    Pagar $1.99 y Desbloquear Mesa
+                </button>
+                <button class="btn-secondary" onclick="closePaywallModal()">Volver a 1 Celular</button>
+            </div>
+        </div>
+
+        <!-- Modal de Mesa QR Desbloqueada -->
+        <div id="qr-modal" class="modal-overlay">
+            <div class="modal-card">
+                <button class="modal-close-btn" onclick="switchMode('local')">✕</button>
+                <div style="font-size: 11px; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.05em">
+                    Modo Varios Celulares
+                </div>
+                <div style="font-family: monospace; font-size: 22px; letter-spacing: 0.15em; margin: 4px 0">
+                    SALA 7F2A
+                </div>
+                <p style="font-size: 12px; color: rgba(255, 255, 255, 0.6)">
+                    Escanea con la cámara de tu teléfono para unirte
+                </p>
+
+                <div class="qr-img">
+                    <img id="qr-image" src="" alt="QR Sala" style="width: 100%; height: 100%" />
+                </div>
+
+                <div style="font-size: 11px; font-weight: 600; color: #30d158; margin-bottom: 12px">
+                    Pase de Mesa Activo
+                </div>
+                <button class="btn-primary" onclick="switchMode('local')">Volver a 1 Celular</button>
+            </div>
+        </div>
+
+        <!-- Modal de Perfil & Google Sign-In Real -->
+        <div id="auth-modal" class="modal-overlay">
+            <div class="modal-card">
+                <button class="modal-close-btn" onclick="closeAuthModal()">✕</button>
+
+                <!-- Vista 1: Login con Google Real -->
+                <div id="auth-view-login">
+                    <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 4px">Tu Perfil Social</h2>
+                    <p style="font-size: 12px; color: #8e8e93; margin-bottom: 14px">
+                        Inicia sesión con tu cuenta real de Google para sincronizar deudas y pases.
+                    </p>
+
+                    <button class="btn-google" onclick="loginWithGoogleOAuth()">
+                        <svg width="18" height="18" viewBox="0 0 18 18">
+                            <path
+                                fill="#4285F4"
+                                d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.49h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.92c1.71-1.57 2.68-3.89 2.68-6.62z"
+                            />
+                            <path
+                                fill="#34A853"
+                                d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.83.87-3.04.87-2.34 0-4.33-1.58-5.04-3.71H.95v2.33C2.43 15.98 5.48 18 9 18z"
+                            />
+                            <path
+                                fill="#FBBC05"
+                                d="M3.96 10.72A5.41 5.41 0 0 1 3.68 9c0-.6.1-1.18.28-1.72V4.95H.95A9.01 9.01 0 0 0 0 9c0 1.45.35 2.82.95 4.05l3.01-2.33z"
+                            />
+                            <path
+                                fill="#EA4335"
+                                d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.59C13.46.89 11.43 0 9 0 5.48 0 2.43 2.02.95 4.95l3.01 2.33c.71-2.13 2.7-3.7 5.04-3.7z"
+                            />
+                        </svg>
+                        Iniciar Sesión con Google
+                    </button>
+
+                    <button
+                        class="btn-secondary"
+                        onclick="toggleClientIdConfig()"
+                        style="font-size: 11px; margin-top: 10px; color: #636366"
+                    >
+                        ⚙️ Configurar Google Client ID
+                    </button>
+
+                    <div
+                        id="client-id-config-box"
+                        style="
+                            display: none;
+                            margin-top: 10px;
+                            background: rgba(255, 255, 255, 0.03);
+                            border: 1px solid rgba(255, 255, 255, 0.08);
+                            border-radius: 12px;
+                            padding: 10px;
+                            text-align: left;
+                        "
+                    >
+                        <label style="font-size: 10px; color: #8e8e93; display: block; margin-bottom: 4px"
+                            >Tu Web Client ID (Google Cloud Console)</label
+                        >
+                        <input
+                            type="text"
+                            id="custom-client-id-input"
+                            placeholder="xxxx.apps.googleusercontent.com"
+                            style="
+                                width: 100%;
+                                background: #090a0d;
+                                border: 1px solid rgba(255, 255, 255, 0.1);
+                                color: #fff;
+                                padding: 8px 10px;
+                                border-radius: 8px;
+                                font-size: 11px;
+                                margin-bottom: 8px;
+                                outline: none;
+                            "
+                        />
+                        <button
+                            class="btn-primary"
+                            onclick="saveCustomClientId()"
+                            style="padding: 8px; font-size: 12px"
+                        >
+                            Guardar Client ID
+                        </button>
+                    </div>
+
+                    <button class="btn-secondary" onclick="closeAuthModal()" style="margin-top: 8px">
+                        Continuar como Invitado
+                    </button>
+                </div>
+
+                <!-- Vista 2: Perfil Si Ya Inició Sesión -->
+                <div id="auth-view-profile" style="display: none">
+                    <div id="profile-avatar-big" class="profile-avatar-big">M</div>
+                    <h3 id="profile-user-name" style="font-size: 17px; margin-bottom: 2px">Marco Huamani</h3>
+                    <p id="profile-user-email" style="font-size: 12px; color: #8e8e93; margin-bottom: 12px">
+                        marcoxhbx18@gmail.com
+                    </p>
+
+                    <div class="profile-stats">
+                        <div class="stat-box">
+                            <span id="stat-debts-count" class="stat-num">0</span>
+                            <span class="stat-lbl">Deudas</span>
+                        </div>
+                        <div class="stat-box">
+                            <span id="stat-tier" class="stat-num" style="color: #30d158">GRATIS</span>
+                            <span class="stat-lbl">Membresía</span>
+                        </div>
+                    </div>
+
+                    <button
+                        class="btn-secondary"
+                        onclick="logoutUser()"
+                        style="border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px"
+                    >
+                        Cerrar Sesión
+                    </button>
+                    <button class="btn-danger" onclick="deleteAccountAndData()">Eliminar Mi Cuenta y Datos</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const canvas = document.getElementById("canvas");
+            const ctx = canvas.getContext("2d");
+            const hint = document.getElementById("hint");
+            const sheet = document.getElementById("action-sheet");
+            const paywallModal = document.getElementById("paywall-modal");
+            const qrModal = document.getElementById("qr-modal");
+            const authModal = document.getElementById("auth-modal");
+            const loserInput = document.getElementById("loser-name-input");
+            const amountInput = document.getElementById("bill-amount-input");
+            const paywallTimerBox = document.getElementById("paywall-timer-box");
+            const qrImg = document.getElementById("qr-image");
+            const chipsSection = document.getElementById("chips-section");
+            const chipsList = document.getElementById("chips-list");
+            const userDisplay = document.getElementById("user-display");
+            const userAvatarMini = document.getElementById("user-avatar-mini");
+            const toast = document.getElementById("toast");
+
+            let width = window.innerWidth;
+            let height = window.innerHeight;
+
+            function resize() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width * window.devicePixelRatio;
+                canvas.height = height * window.devicePixelRatio;
+                ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
             }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
+            window.addEventListener("resize", resize);
+            resize();
+
+            function showToast(msg) {
+                toast.innerText = msg;
+                toast.classList.add("visible");
+                setTimeout(() => {
+                    toast.classList.remove("visible");
+                }, 2600);
             }
-        }
 
-        function playPop() {
-            if (!audioCtx) return;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.frequency.setValueAtTime(140, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.04);
-            gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.04);
-        }
+            // ==========================================
+            // ESTADOS DE MÁQUINA & EVENTOS TÁCTILES
+            // ==========================================
+            const STATE = { IDLE: "IDLE", TENSION: "TENSION", OUTCOME: "OUTCOME" };
+            let gameState = STATE.IDLE;
+            let tensionStart = 0;
+            let loserId = null;
+            let frozenLoserPos = null;
+            let previousFingerCount = 0;
 
-        function playAbortSound() {
-            if (!audioCtx) return;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.frequency.setValueAtTime(250, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.08);
-            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.08);
-        }
+            const touches = new Map();
 
-        function playOutcomeSound() {
-            if (!audioCtx) return;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(70, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.25);
-            gain.gain.setValueAtTime(0.7, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.3);
-
-            if (navigator.vibrate) {
-                navigator.vibrate([250]);
-            }
-        }
-
-        function playTick(freq) {
-            if (!audioCtx) return;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(freq * 0.5, audioCtx.currentTime + 0.04);
-            gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.04);
-        }
-
-        function playSuccessChime() {
-            if (!audioCtx) return;
-            const now = audioCtx.currentTime;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'sine';
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.frequency.setValueAtTime(587.33, now);
-            osc.frequency.setValueAtTime(880, now + 0.1);
-            gain.gain.setValueAtTime(0.2, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
-            osc.start(now);
-            osc.stop(now + 0.45);
-        }
-
-        // Filtro estricto: Sólo bloquear toques si una ventana modal visible está activa
-        function isInteractiveElement(target) {
-            if (sheet.style.display !== 'none' && target.closest('.sheet-content')) return true;
-            if (paywallModal.classList.contains('visible') && target.closest('.modal-card')) return true;
-            if (qrModal.classList.contains('visible') && target.closest('.modal-card')) return true;
-            if (authModal.classList.contains('visible') && target.closest('.modal-card')) return true;
-            if (target.closest('#header-container')) return true;
-            return false;
-        }
-
-        window.addEventListener('touchstart', (e) => {
-            if (isInteractiveElement(e.target)) return;
-            e.preventDefault();
-            initAudio();
-
-            for (let i = 0; i < e.changedTouches.length; i++) {
-                const t = e.changedTouches[i];
-                if (touches.size < 5 && gameState !== STATE.OUTCOME) {
-                    touches.set(t.identifier, {
-                        x: t.clientX,
-                        y: t.clientY,
-                        startTime: performance.now(),
-                        hue: (t.identifier * 73) % 360
-                    });
-                    playPop();
+            let audioCtx = null;
+            function initAudio() {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === "suspended") {
+                    audioCtx.resume();
                 }
             }
-            evaluateState();
-        }, { passive: false });
 
-        window.addEventListener('touchmove', (e) => {
-            if (isInteractiveElement(e.target)) return;
-            e.preventDefault();
-            for (let i = 0; i < e.changedTouches.length; i++) {
-                const t = e.changedTouches[i];
-                if (touches.has(t.identifier)) {
-                    const item = touches.get(t.identifier);
-                    item.x = t.clientX;
-                    item.y = t.clientY;
-                }
-            }
-        }, { passive: false });
-
-        window.addEventListener('touchend', (e) => {
-            if (isInteractiveElement(e.target)) return;
-            for (let i = 0; i < e.changedTouches.length; i++) {
-                const t = e.changedTouches[i];
-                touches.delete(t.identifier);
-            }
-            evaluateState();
-        });
-
-        window.addEventListener('touchcancel', (e) => {
-            if (isInteractiveElement(e.target)) return;
-            for (let i = 0; i < e.changedTouches.length; i++) {
-                const t = e.changedTouches[i];
-                touches.delete(t.identifier);
-            }
-            evaluateState();
-        });
-
-        function evaluateState() {
-            const count = touches.size;
-
-            if (gameState === STATE.OUTCOME) {
-                return;
+            function playPop() {
+                if (!audioCtx) return;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.frequency.setValueAtTime(140, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.04);
+                gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.04);
             }
 
-            if (count >= 2 && count <= 5) {
-                if (gameState !== STATE.TENSION) {
-                    gameState = STATE.TENSION;
-                    tensionStart = performance.now();
-                    previousFingerCount = count;
-                } else if (count !== previousFingerCount) {
-                    tensionStart = performance.now();
-                    previousFingerCount = count;
-                    playAbortSound();
-                }
-                hint.style.opacity = '0';
-            } else {
-                if (gameState === STATE.TENSION) {
-                    playAbortSound();
-                }
-                gameState = STATE.IDLE;
-                hint.style.opacity = '1';
-                previousFingerCount = 0;
+            function playAbortSound() {
+                if (!audioCtx) return;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.frequency.setValueAtTime(250, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.08);
             }
-        }
 
-        // Bucle de renderizado
-        function loop(now) {
-            ctx.clearRect(0, 0, width, height);
+            function playOutcomeSound() {
+                if (!audioCtx) return;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = "triangle";
+                osc.frequency.setValueAtTime(70, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.25);
+                gain.gain.setValueAtTime(0.7, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
 
-            if (gameState === STATE.TENSION) {
-                const elapsed = (now - tensionStart) / 1000;
-                const progress = Math.min(elapsed / 3.0, 1.0);
-
-                if (progress >= 1.0) {
-                    resolveOutcome();
-                } else {
-                    const freq = 12 + progress * 28;
-                    const amp = 3.0 + progress * 7.0;
-                    const tensionRadius = 45 + Math.sin(now * 0.001 * freq * Math.PI * 2) * amp;
-
-                    touches.forEach((touch) => {
-                        drawFingerCircle(touch.x, touch.y, tensionRadius, touch.hue, progress);
-                    });
-                }
-            } else if (gameState === STATE.IDLE) {
-                touches.forEach((touch) => {
-                    drawFingerCircle(touch.x, touch.y, 45, touch.hue, 0);
-                });
-            } else if (gameState === STATE.OUTCOME) {
-                if (frozenLoserPos) {
-                    drawLoserPulse(frozenLoserPos.x, frozenLoserPos.y, now);
+                if (navigator.vibrate) {
+                    navigator.vibrate([250]);
                 }
             }
 
-            requestAnimationFrame(loop);
-        }
-        requestAnimationFrame(loop);
-
-        function drawFingerCircle(x, y, radius, hue, progress) {
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(x, y, radius + 15, 0, Math.PI * 2);
-            ctx.fillStyle = `hsla(${hue}, 80%, 55%, ${0.08 + progress * 0.15})`;
-            ctx.fill();
-
-            ctx.beginPath();
-            ctx.arc(x, y, radius, 0, Math.PI * 2);
-            ctx.lineWidth = 3 + progress * 3;
-            ctx.strokeStyle = `hsl(${hue}, 85%, ${60 + progress * 20}%)`;
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.arc(x, y, 6, 0, Math.PI * 2);
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fill();
-            ctx.restore();
-        }
-
-        function drawLoserPulse(x, y, now) {
-            ctx.save();
-            const pulse = (Math.sin(now * 0.006) + 1) * 0.5;
-            const r = 50 + pulse * 14;
-
-            ctx.beginPath();
-            ctx.arc(x, y, r + 20, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(255, 69, 58, ${0.15 + pulse * 0.1})`;
-            ctx.fill();
-
-            ctx.beginPath();
-            ctx.arc(x, y, r, 0, Math.PI * 2);
-            ctx.lineWidth = 5;
-            ctx.strokeStyle = '#FF453A';
-            ctx.stroke();
-
-            ctx.font = '600 16px -apple-system, sans-serif';
-            ctx.fillStyle = '#FF453A';
-            ctx.textAlign = 'center';
-            ctx.fillText('¡TÚ PAGAS!', x, y - r - 16);
-            ctx.restore();
-        }
-
-        function resolveOutcome() {
-            gameState = STATE.OUTCOME;
-            const touchIds = Array.from(touches.keys());
-            if (touchIds.length === 0) return;
-
-            const randomBuffer = new Uint32Array(1);
-            window.crypto.getRandomValues(randomBuffer);
-            const loserIndex = randomBuffer[0] % touchIds.length;
-            loserId = touchIds[loserIndex];
-
-            const loserTouch = touches.get(loserId);
-            if (loserTouch) {
-                frozenLoserPos = { x: loserTouch.x, y: loserTouch.y };
+            function playTick(freq) {
+                if (!audioCtx) return;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(freq * 0.5, audioCtx.currentTime + 0.04);
+                gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.04);
             }
 
-            playOutcomeSound();
-
-            // Tiempo prolongado (2.6s) para ver al perdedor con ¡TÚ PAGAS! antes del sheet
-            setTimeout(() => {
-                openDebtSheet();
-            }, 2600);
-        }
-
-        function openDebtSheet() {
-            renderFriendsChips();
-            sheet.style.display = 'block';
-            requestAnimationFrame(() => {
-                sheet.classList.add('visible');
-            });
-        }
-
-        function renderFriendsChips() {
-            const savedFriends = JSON.parse(localStorage.getItem('whopays_friends') || '[]');
-            chipsList.innerHTML = '';
-
-            if (savedFriends.length > 0) {
-                chipsSection.style.display = 'block';
-                savedFriends.forEach(friend => {
-                    const chip = document.createElement('span');
-                    chip.className = 'chip';
-                    chip.innerText = friend;
-                    chip.onclick = () => selectChip(friend);
-                    chipsList.appendChild(chip);
-                });
-            } else {
-                chipsSection.style.display = 'none';
-            }
-        }
-
-        function selectChip(name) {
-            loserInput.value = name;
-        }
-
-        function saveDebt() {
-            const name = loserInput.value.trim() || 'Desconocido';
-            const amount = amountInput.value.trim() || '0.00';
-            
-            let savedFriends = JSON.parse(localStorage.getItem('whopays_friends') || '[]');
-            if (name !== 'Desconocido' && !savedFriends.includes(name)) {
-                savedFriends.push(name);
-                localStorage.setItem('whopays_friends', JSON.stringify(savedFriends));
+            function playSuccessChime() {
+                if (!audioCtx) return;
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = "sine";
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.frequency.setValueAtTime(587.33, now);
+                osc.frequency.setValueAtTime(880, now + 0.1);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+                osc.start(now);
+                osc.stop(now + 0.45);
             }
 
-            let debts = JSON.parse(localStorage.getItem('whopays_debts') || '[]');
-            debts.push({ name, amount, date: new Date().toISOString() });
-            localStorage.setItem('whopays_debts', JSON.stringify(debts));
+            // Filtro estricto: Sólo bloquear toques si una ventana modal visible está activa
+            function isInteractiveElement(target) {
+                if (sheet.style.display !== "none" && target.closest(".sheet-content")) return true;
+                if (paywallModal.classList.contains("visible") && target.closest(".modal-card")) return true;
+                if (qrModal.classList.contains("visible") && target.closest(".modal-card")) return true;
+                if (authModal.classList.contains("visible") && target.closest(".modal-card")) return true;
+                if (target.closest("#header-container")) return true;
+                return false;
+            }
 
-            updateProfileStats();
-            showToast(`Deuda de ${name} anotada ($${amount})`);
-            dismissSheet();
-        }
+            window.addEventListener(
+                "touchstart",
+                (e) => {
+                    if (isInteractiveElement(e.target)) return;
+                    e.preventDefault();
+                    initAudio();
 
-        function dismissSheet() {
-            sheet.classList.remove('visible');
-            setTimeout(() => {
-                sheet.style.display = 'none';
-                loserInput.value = '';
-                amountInput.value = '';
-                gameState = STATE.IDLE;
-                loserId = null;
-                frozenLoserPos = null;
-                touches.clear();
+                    for (let i = 0; i < e.changedTouches.length; i++) {
+                        const t = e.changedTouches[i];
+                        if (touches.size < 5 && gameState !== STATE.OUTCOME) {
+                            touches.set(t.identifier, {
+                                x: t.clientX,
+                                y: t.clientY,
+                                startTime: performance.now(),
+                                hue: (t.identifier * 73) % 360,
+                            });
+                            playPop();
+                        }
+                    }
+                    evaluateState();
+                },
+                { passive: false },
+            );
+
+            window.addEventListener(
+                "touchmove",
+                (e) => {
+                    if (isInteractiveElement(e.target)) return;
+                    e.preventDefault();
+                    for (let i = 0; i < e.changedTouches.length; i++) {
+                        const t = e.changedTouches[i];
+                        if (touches.has(t.identifier)) {
+                            const item = touches.get(t.identifier);
+                            item.x = t.clientX;
+                            item.y = t.clientY;
+                        }
+                    }
+                },
+                { passive: false },
+            );
+
+            window.addEventListener("touchend", (e) => {
+                if (isInteractiveElement(e.target)) return;
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    const t = e.changedTouches[i];
+                    touches.delete(t.identifier);
+                }
                 evaluateState();
-            }, 300);
-        }
+            });
 
-        // ==========================================
-        // GESTIÓN DE MODOS Y PASARELA EN DÓLARES ($)
-        // ==========================================
-        function isMesaUnlocked() {
-            const isPro = localStorage.getItem('whopays_pro_status') === 'active';
-            if (isPro) return true;
-            const passExpiry = parseInt(localStorage.getItem('whopays_mesa_pass_expiry') || '0', 10);
-            return Date.now() < passExpiry;
-        }
+            window.addEventListener("touchcancel", (e) => {
+                if (isInteractiveElement(e.target)) return;
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    const t = e.changedTouches[i];
+                    touches.delete(t.identifier);
+                }
+                evaluateState();
+            });
 
-        function switchMode(mode) {
-            const btnLocal = document.getElementById('btn-mode-local');
-            const btnQr = document.getElementById('btn-mode-qr');
+            function evaluateState() {
+                const count = touches.size;
 
-            if (mode === 'qr') {
-                if (!isMesaUnlocked()) {
-                    openPaywallModal();
+                if (gameState === STATE.OUTCOME) {
                     return;
                 }
 
-                btnLocal.classList.remove('active');
-                btnQr.classList.add('active');
-                paywallModal.classList.remove('visible');
-                clearInterval(paywallTimerInterval);
-
-                qrModal.classList.add('visible');
-                const roomUrl = window.location.origin + '/?room=7F2A';
-                qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=170x170&data=' + encodeURIComponent(roomUrl);
-            } else {
-                btnLocal.classList.add('active');
-                btnQr.classList.remove('active');
-                qrModal.classList.remove('visible');
-                paywallModal.classList.remove('visible');
-                clearInterval(paywallTimerInterval);
-            }
-        }
-
-        let paywallSeconds = 180;
-        let paywallTimerInterval = null;
-
-        function openPaywallModal() {
-            paywallModal.classList.add('visible');
-            startPaywallCountdown();
-        }
-
-        function closePaywallModal() {
-            paywallModal.classList.remove('visible');
-            clearInterval(paywallTimerInterval);
-            document.getElementById('btn-mode-local').classList.add('active');
-            document.getElementById('btn-mode-qr').classList.remove('active');
-        }
-
-        function startPaywallCountdown() {
-            clearInterval(paywallTimerInterval);
-            paywallSeconds = 180;
-            updatePaywallTimerDisplay();
-
-            paywallTimerInterval = setInterval(() => {
-                paywallSeconds--;
-                updatePaywallTimerDisplay();
-
-                if (paywallSeconds <= 10 && paywallSeconds > 3) {
-                    playTick(800);
-                } else if (paywallSeconds <= 3 && paywallSeconds > 0) {
-                    playTick(1200);
-                } else if (paywallSeconds <= 0) {
-                    playTick(150);
-                    clearInterval(paywallTimerInterval);
-                    closePaywallModal();
-                    showToast('Reserva de mesa expirada');
-                }
-            }, 1000);
-        }
-
-        function updatePaywallTimerDisplay() {
-            const m = Math.floor(paywallSeconds / 60).toString().padStart(2, '0');
-            const s = (paywallSeconds % 60).toString().padStart(2, '0');
-            paywallTimerBox.innerText = `${m}:${s}`;
-
-            if (paywallSeconds > 90) {
-                paywallTimerBox.style.color = '#30D158';
-                paywallTimerBox.style.borderColor = '#30D158';
-            } else if (paywallSeconds > 30) {
-                paywallTimerBox.style.color = '#FFD60A';
-                paywallTimerBox.style.borderColor = '#FFD60A';
-            } else {
-                paywallTimerBox.style.color = '#FF453A';
-                paywallTimerBox.style.borderColor = '#FF453A';
-            }
-        }
-
-        let selectedPlan = 'pass';
-        let selectedMethod = 'lemon';
-
-        function selectPlan(plan) {
-            selectedPlan = plan;
-            document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
-            document.getElementById('plan-' + plan).classList.add('selected');
-
-            const payBtn = document.getElementById('btn-pay-action');
-            if (plan === 'pass') {
-                payBtn.innerText = 'Pagar $1.99 y Desbloquear Mesa';
-            } else {
-                payBtn.innerText = 'Suscribirme PRO ($9.99/mes)';
-            }
-            updatePaymentQrView();
-        }
-
-        function selectMethod(method) {
-            selectedMethod = method;
-            document.querySelectorAll('.method-chip').forEach(c => c.classList.remove('selected'));
-            document.getElementById('method-' + method).classList.add('selected');
-            updatePaymentQrView();
-        }
-
-        function updatePaymentQrView() {
-            const qrContainer = document.getElementById('payment-qr-container');
-            const qrImg = document.getElementById('payment-qr-img');
-            const qrLabel = document.getElementById('payment-qr-label');
-            const price = selectedPlan === 'pass' ? '$1.99 USD' : '$9.99 USD';
-
-            if (selectedMethod === 'lemon') {
-                qrContainer.style.display = 'flex';
-                qrImg.src = 'assets/lemon-qr.jpeg';
-                qrLabel.innerText = `Escanea con tu app Lemon (${price})`;
-            } else if (selectedMethod === 'yape') {
-                qrContainer.style.display = 'flex';
-                qrImg.src = 'assets/yape-qr.jpeg';
-                const soles = selectedPlan === 'pass' ? 'S/ 7.20' : 'S/ 36.00';
-                qrLabel.innerText = `Escanea con Yape (${soles} / ${price})`;
-            } else if (selectedMethod === 'card') {
-                qrContainer.style.display = 'none';
-                qrLabel.innerText = `Procesamiento con Tarjeta (${price})`;
-            } else if (selectedMethod === 'applepay') {
-                qrContainer.style.display = 'none';
-                qrLabel.innerText = `Doble toque con Apple Pay (${price})`;
-            }
-        }
-
-        function executePayment() {
-            const payBtn = document.getElementById('btn-pay-action');
-            payBtn.innerText = 'Procesando pago seguro...';
-            payBtn.disabled = true;
-
-            initAudio();
-
-            setTimeout(() => {
-                playSuccessChime();
-
-                if (selectedPlan === 'pro') {
-                    localStorage.setItem('whopays_pro_status', 'active');
-                } else {
-                    const expiry = Date.now() + 3 * 3600 * 1000;
-                    localStorage.setItem('whopays_mesa_pass_expiry', expiry.toString());
-                }
-
-                payBtn.innerText = '¡Desbloqueo Exitoso!';
-                showToast('Mesa QR activada correctamente');
-
-                setTimeout(() => {
-                    payBtn.disabled = false;
-                    selectPlan(selectedPlan);
-                    paywallModal.classList.remove('visible');
-                    clearInterval(paywallTimerInterval);
-                    switchMode('qr');
-                }, 600);
-            }, 750);
-        }
-
-        // ==========================================
-        // AUTENTICACIÓN GOOGLE REAL & BORRADO DE CUENTA
-        // ==========================================
-        // Google Web Client ID configurado en Google Cloud Console
-        let GOOGLE_CLIENT_ID = localStorage.getItem('whopays_google_client_id') || "426594946636-9fd8kavq5e781vf9ojdn5f1ugb5fvoue.apps.googleusercontent.com";
-
-        function toggleClientIdConfig() {
-            const box = document.getElementById('client-id-config-box');
-            box.style.display = box.style.display === 'none' ? 'block' : 'none';
-            document.getElementById('custom-client-id-input').value = GOOGLE_CLIENT_ID;
-        }
-
-        function saveCustomClientId() {
-            const val = document.getElementById('custom-client-id-input').value.trim();
-            if (val) {
-                GOOGLE_CLIENT_ID = val;
-                localStorage.setItem('whopays_google_client_id', val);
-                showToast("Google Client ID guardado");
-                document.getElementById('client-id-config-box').style.display = 'none';
-            }
-        }
-
-        function openAuthModal() {
-            const savedUser = JSON.parse(localStorage.getItem('whopays_user') || 'null');
-            if (savedUser) {
-                showProfileView(savedUser);
-            } else {
-                showLoginView();
-            }
-            authModal.classList.add('visible');
-        }
-
-        function closeAuthModal() {
-            authModal.classList.remove('visible');
-        }
-
-        function showLoginView() {
-            document.getElementById('auth-view-login').style.display = 'block';
-            document.getElementById('auth-view-profile').style.display = 'none';
-        }
-
-        function showProfileView(user) {
-            document.getElementById('auth-view-login').style.display = 'none';
-            document.getElementById('auth-view-profile').style.display = 'block';
-
-            document.getElementById('profile-user-name').innerText = user.fullName || user.name;
-            document.getElementById('profile-user-email').innerText = user.email || 'Cuenta Vinculada';
-
-            const avatarEl = document.getElementById('profile-avatar-big');
-            if (user.avatar) {
-                avatarEl.innerHTML = `<img src="${user.avatar}" alt="Avatar" />`;
-            } else {
-                const initial = (user.name || 'M')[0].toUpperCase();
-                avatarEl.innerText = initial;
-            }
-
-            updateProfileStats();
-        }
-
-        function updateProfileStats() {
-            const debts = JSON.parse(localStorage.getItem('whopays_debts') || '[]');
-            const countEl = document.getElementById('stat-debts-count');
-            if (countEl) countEl.innerText = debts.length;
-
-            const isPro = localStorage.getItem('whopays_pro_status') === 'active';
-            const tierEl = document.getElementById('stat-tier');
-            if (tierEl) {
-                tierEl.innerText = isPro ? 'PRO' : 'GRATIS';
-                tierEl.style.color = isPro ? '#FF9F0A' : '#30D158';
-            }
-        }
-
-        function setUserSession(user) {
-            localStorage.setItem('whopays_user', JSON.stringify(user));
-            userDisplay.innerText = user.name;
-            if (user.avatar) {
-                userAvatarMini.innerHTML = `<img src="${user.avatar}" alt="Avatar" />`;
-            } else {
-                const initial = (user.name || 'M')[0].toUpperCase();
-                userAvatarMini.innerText = initial;
-            }
-            updateProfileStats();
-        }
-
-        function loginWithGoogleOAuth() {
-            if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
-                showToast("Cargando librerías de Google...");
-                return;
-            }
-
-            try {
-                const client = google.accounts.oauth2.initTokenClient({
-                    client_id: GOOGLE_CLIENT_ID,
-                    scope: 'email profile openid',
-                    callback: async (tokenResponse) => {
-                        if (tokenResponse && tokenResponse.access_token) {
-                            try {
-                                const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                                    headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
-                                });
-                                const profile = await res.json();
-                                const user = {
-                                    name: profile.given_name || profile.name || 'Marco',
-                                    fullName: profile.name || 'Marco Huamani',
-                                    email: profile.email,
-                                    avatar: profile.picture,
-                                    provider: 'google'
-                                };
-                                setUserSession(user);
-                                playSuccessChime();
-                                showToast(`Bienvenido, ${user.name}`);
-                                closeAuthModal();
-                            } catch (e) {
-                                console.error('Error al obtener perfil:', e);
-                                showToast('Error al conectar con Google');
-                            }
-                        }
-                    },
-                    error_callback: (err) => {
-                        console.warn('OAuth Error:', err);
-                        showToast('Autenticación cancelada');
+                if (count >= 2 && count <= 5) {
+                    if (gameState !== STATE.TENSION) {
+                        gameState = STATE.TENSION;
+                        tensionStart = performance.now();
+                        previousFingerCount = count;
+                    } else if (count !== previousFingerCount) {
+                        tensionStart = performance.now();
+                        previousFingerCount = count;
+                        playAbortSound();
                     }
-                });
-                client.requestAccessToken();
-            } catch (err) {
-                console.error('Error iniciando Google OAuth:', err);
-                showToast('Error al iniciar ventana de Google');
+                    hint.style.opacity = "0";
+                } else {
+                    if (gameState === STATE.TENSION) {
+                        playAbortSound();
+                    }
+                    gameState = STATE.IDLE;
+                    hint.style.opacity = "1";
+                    previousFingerCount = 0;
+                }
             }
-        }
 
-        function logoutUser() {
-            localStorage.removeItem('whopays_user');
-            userDisplay.innerText = 'Invitado';
-            userAvatarMini.innerHTML = 'M';
-            showToast('Sesión cerrada');
-            showLoginView();
-        }
+            // Bucle de renderizado
+            function loop(now) {
+                ctx.clearRect(0, 0, width, height);
 
-        function deleteAccountAndData() {
-            const confirmed = confirm("¿Estás seguro de que deseas eliminar tu cuenta y purgar todos tus datos?\n\nEsta acción borrará irreversiblemente tu perfil, todas tus deudas registradas, amigos guardados y suscripciones.");
-            if (confirmed) {
-                localStorage.clear();
-                userDisplay.innerText = 'Invitado';
-                userAvatarMini.innerHTML = 'M';
-                showToast('Cuenta y datos eliminados');
-                closeAuthModal();
+                if (gameState === STATE.TENSION) {
+                    const elapsed = (now - tensionStart) / 1000;
+                    const progress = Math.min(elapsed / 3.0, 1.0);
+
+                    if (progress >= 1.0) {
+                        resolveOutcome();
+                    } else {
+                        const freq = 12 + progress * 28;
+                        const amp = 3.0 + progress * 7.0;
+                        const tensionRadius = 45 + Math.sin(now * 0.001 * freq * Math.PI * 2) * amp;
+
+                        touches.forEach((touch) => {
+                            drawFingerCircle(touch.x, touch.y, tensionRadius, touch.hue, progress);
+                        });
+                    }
+                } else if (gameState === STATE.IDLE) {
+                    touches.forEach((touch) => {
+                        drawFingerCircle(touch.x, touch.y, 45, touch.hue, 0);
+                    });
+                } else if (gameState === STATE.OUTCOME) {
+                    if (frozenLoserPos) {
+                        drawLoserPulse(frozenLoserPos.x, frozenLoserPos.y, now);
+                    }
+                }
+
+                requestAnimationFrame(loop);
+            }
+            requestAnimationFrame(loop);
+
+            function drawFingerCircle(x, y, radius, hue, progress) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(x, y, radius + 15, 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(${hue}, 80%, 55%, ${0.08 + progress * 0.15})`;
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.lineWidth = 3 + progress * 3;
+                ctx.strokeStyle = `hsl(${hue}, 85%, ${60 + progress * 20}%)`;
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(x, y, 6, 0, Math.PI * 2);
+                ctx.fillStyle = "#FFFFFF";
+                ctx.fill();
+                ctx.restore();
+            }
+
+            function drawLoserPulse(x, y, now) {
+                ctx.save();
+                const pulse = (Math.sin(now * 0.006) + 1) * 0.5;
+                const r = 50 + pulse * 14;
+
+                ctx.beginPath();
+                ctx.arc(x, y, r + 20, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 69, 58, ${0.15 + pulse * 0.1})`;
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.lineWidth = 5;
+                ctx.strokeStyle = "#FF453A";
+                ctx.stroke();
+
+                ctx.font = "600 16px -apple-system, sans-serif";
+                ctx.fillStyle = "#FF453A";
+                ctx.textAlign = "center";
+                ctx.fillText("¡TÚ PAGAS!", x, y - r - 16);
+                ctx.restore();
+            }
+
+            function resolveOutcome() {
+                gameState = STATE.OUTCOME;
+                const touchIds = Array.from(touches.keys());
+                if (touchIds.length === 0) return;
+
+                const randomBuffer = new Uint32Array(1);
+                window.crypto.getRandomValues(randomBuffer);
+                const loserIndex = randomBuffer[0] % touchIds.length;
+                loserId = touchIds[loserIndex];
+
+                const loserTouch = touches.get(loserId);
+                if (loserTouch) {
+                    frozenLoserPos = { x: loserTouch.x, y: loserTouch.y };
+                }
+
+                playOutcomeSound();
+
+                // Tiempo prolongado (2.6s) para ver al perdedor con ¡TÚ PAGAS! antes del sheet
+                setTimeout(() => {
+                    openDebtSheet();
+                }, 2600);
+            }
+
+            function openDebtSheet() {
+                renderFriendsChips();
+                sheet.style.display = "block";
+                requestAnimationFrame(() => {
+                    sheet.classList.add("visible");
+                });
+            }
+
+            function renderFriendsChips() {
+                const savedFriends = JSON.parse(localStorage.getItem("whopays_friends") || "[]");
+                chipsList.innerHTML = "";
+
+                if (savedFriends.length > 0) {
+                    chipsSection.style.display = "block";
+                    savedFriends.forEach((friend) => {
+                        const chip = document.createElement("span");
+                        chip.className = "chip";
+                        chip.innerText = friend;
+                        chip.onclick = () => selectChip(friend);
+                        chipsList.appendChild(chip);
+                    });
+                } else {
+                    chipsSection.style.display = "none";
+                }
+            }
+
+            function selectChip(name) {
+                loserInput.value = name;
+            }
+
+            function saveDebt() {
+                const name = loserInput.value.trim() || "Desconocido";
+                const amount = amountInput.value.trim() || "0.00";
+
+                let savedFriends = JSON.parse(localStorage.getItem("whopays_friends") || "[]");
+                if (name !== "Desconocido" && !savedFriends.includes(name)) {
+                    savedFriends.push(name);
+                    localStorage.setItem("whopays_friends", JSON.stringify(savedFriends));
+                }
+
+                let debts = JSON.parse(localStorage.getItem("whopays_debts") || "[]");
+                debts.push({ name, amount, date: new Date().toISOString() });
+                localStorage.setItem("whopays_debts", JSON.stringify(debts));
+
+                updateProfileStats();
+                showToast(`Deuda de ${name} anotada ($${amount})`);
                 dismissSheet();
             }
-        }
 
-        // Cargar usuario inicial al arrancar
-        const existingUser = JSON.parse(localStorage.getItem('whopays_user') || 'null');
-        if (existingUser) {
-            setUserSession(existingUser);
-        }
-    </script>
-</body>
+            function dismissSheet() {
+                sheet.classList.remove("visible");
+                setTimeout(() => {
+                    sheet.style.display = "none";
+                    loserInput.value = "";
+                    amountInput.value = "";
+                    gameState = STATE.IDLE;
+                    loserId = null;
+                    frozenLoserPos = null;
+                    touches.clear();
+                    evaluateState();
+                }, 300);
+            }
+
+            // ==========================================
+            // GESTIÓN DE MODOS Y PASARELA EN DÓLARES ($)
+            // ==========================================
+            function isMesaUnlocked() {
+                const isPro = localStorage.getItem("whopays_pro_status") === "active";
+                if (isPro) return true;
+                const passExpiry = parseInt(localStorage.getItem("whopays_mesa_pass_expiry") || "0", 10);
+                return Date.now() < passExpiry;
+            }
+
+            function switchMode(mode) {
+                const btnLocal = document.getElementById("btn-mode-local");
+                const btnQr = document.getElementById("btn-mode-qr");
+
+                if (mode === "qr") {
+                    if (!isMesaUnlocked()) {
+                        openPaywallModal();
+                        return;
+                    }
+
+                    btnLocal.classList.remove("active");
+                    btnLocal.setAttribute("aria-selected", "false");
+                    btnQr.classList.add("active");
+                    btnQr.setAttribute("aria-selected", "true");
+                    paywallModal.classList.remove("visible");
+                    clearInterval(paywallTimerInterval);
+
+                    qrModal.classList.add("visible");
+                    const roomUrl = window.location.origin + "/?room=7F2A";
+                    qrImg.src =
+                        "https://api.qrserver.com/v1/create-qr-code/?size=170x170&data=" + encodeURIComponent(roomUrl);
+                } else {
+                    btnLocal.classList.add("active");
+                    btnLocal.setAttribute("aria-selected", "true");
+                    btnQr.classList.remove("active");
+                    btnQr.setAttribute("aria-selected", "false");
+                    qrModal.classList.remove("visible");
+                    paywallModal.classList.remove("visible");
+                    clearInterval(paywallTimerInterval);
+                }
+            }
+
+            let paywallSeconds = 180;
+            let paywallTimerInterval = null;
+
+            function openPaywallModal() {
+                paywallModal.classList.add("visible");
+                startPaywallCountdown();
+            }
+
+            function closePaywallModal() {
+                paywallModal.classList.remove("visible");
+                clearInterval(paywallTimerInterval);
+                document.getElementById("btn-mode-local").classList.add("active");
+                document.getElementById("btn-mode-qr").classList.remove("active");
+            }
+
+            function startPaywallCountdown() {
+                clearInterval(paywallTimerInterval);
+                paywallSeconds = 180;
+                updatePaywallTimerDisplay();
+
+                paywallTimerInterval = setInterval(() => {
+                    paywallSeconds--;
+                    updatePaywallTimerDisplay();
+
+                    if (paywallSeconds <= 10 && paywallSeconds > 3) {
+                        playTick(800);
+                    } else if (paywallSeconds <= 3 && paywallSeconds > 0) {
+                        playTick(1200);
+                    } else if (paywallSeconds <= 0) {
+                        playTick(150);
+                        clearInterval(paywallTimerInterval);
+                        closePaywallModal();
+                        showToast("Reserva de mesa expirada");
+                    }
+                }, 1000);
+            }
+
+            function updatePaywallTimerDisplay() {
+                const m = Math.floor(paywallSeconds / 60)
+                    .toString()
+                    .padStart(2, "0");
+                const s = (paywallSeconds % 60).toString().padStart(2, "0");
+                paywallTimerBox.innerText = `${m}:${s}`;
+
+                if (paywallSeconds > 90) {
+                    paywallTimerBox.style.color = "#30D158";
+                    paywallTimerBox.style.borderColor = "#30D158";
+                } else if (paywallSeconds > 30) {
+                    paywallTimerBox.style.color = "#FFD60A";
+                    paywallTimerBox.style.borderColor = "#FFD60A";
+                } else {
+                    paywallTimerBox.style.color = "#FF453A";
+                    paywallTimerBox.style.borderColor = "#FF453A";
+                }
+            }
+
+            let selectedPlan = "pass";
+            let selectedMethod = "lemon";
+
+            function selectPlan(plan) {
+                selectedPlan = plan;
+                document.querySelectorAll(".plan-card").forEach((c) => c.classList.remove("selected"));
+                document.getElementById("plan-" + plan).classList.add("selected");
+
+                const payBtn = document.getElementById("btn-pay-action");
+                if (plan === "pass") {
+                    payBtn.innerText = "Pagar $1.99 y Desbloquear Mesa";
+                } else {
+                    payBtn.innerText = "Suscribirme PRO ($9.99/mes)";
+                }
+                updatePaymentQrView();
+            }
+
+            function selectMethod(method) {
+                selectedMethod = method;
+                document.querySelectorAll(".method-chip").forEach((c) => c.classList.remove("selected"));
+                document.getElementById("method-" + method).classList.add("selected");
+                updatePaymentQrView();
+            }
+
+            function updatePaymentQrView() {
+                const qrContainer = document.getElementById("payment-qr-container");
+                const qrImg = document.getElementById("payment-qr-img");
+                const qrLabel = document.getElementById("payment-qr-label");
+                const price = selectedPlan === "pass" ? "$1.99 USD" : "$9.99 USD";
+
+                if (selectedMethod === "lemon") {
+                    qrContainer.style.display = "flex";
+                    qrImg.src = "assets/lemon-qr.jpeg";
+                    qrLabel.innerText = `Escanea con tu app Lemon (${price})`;
+                } else if (selectedMethod === "yape") {
+                    qrContainer.style.display = "flex";
+                    qrImg.src = "assets/yape-qr.jpeg";
+                    const soles = selectedPlan === "pass" ? "S/ 7.20" : "S/ 36.00";
+                    qrLabel.innerText = `Escanea con Yape (${soles} / ${price})`;
+                } else if (selectedMethod === "card") {
+                    qrContainer.style.display = "none";
+                    qrLabel.innerText = `Procesamiento con Tarjeta (${price})`;
+                } else if (selectedMethod === "applepay") {
+                    qrContainer.style.display = "none";
+                    qrLabel.innerText = `Doble toque con Apple Pay (${price})`;
+                }
+            }
+
+            function executePayment() {
+                const payBtn = document.getElementById("btn-pay-action");
+                payBtn.innerText = "Procesando pago seguro...";
+                payBtn.disabled = true;
+
+                initAudio();
+
+                setTimeout(() => {
+                    playSuccessChime();
+
+                    if (selectedPlan === "pro") {
+                        localStorage.setItem("whopays_pro_status", "active");
+                    } else {
+                        const expiry = Date.now() + 3 * 3600 * 1000;
+                        localStorage.setItem("whopays_mesa_pass_expiry", expiry.toString());
+                    }
+
+                    payBtn.innerText = "¡Desbloqueo Exitoso!";
+                    showToast("Mesa QR activada correctamente");
+
+                    setTimeout(() => {
+                        payBtn.disabled = false;
+                        selectPlan(selectedPlan);
+                        paywallModal.classList.remove("visible");
+                        clearInterval(paywallTimerInterval);
+                        switchMode("qr");
+                    }, 600);
+                }, 750);
+            }
+
+            // ==========================================
+            // AUTENTICACIÓN GOOGLE REAL & BORRADO DE CUENTA
+            // ==========================================
+            // Google Web Client ID configurado en Google Cloud Console
+            let GOOGLE_CLIENT_ID =
+                localStorage.getItem("whopays_google_client_id") ||
+                "426594946636-9fd8kavq5e781vf9ojdn5f1ugb5fvoue.apps.googleusercontent.com";
+
+            function toggleClientIdConfig() {
+                const box = document.getElementById("client-id-config-box");
+                box.style.display = box.style.display === "none" ? "block" : "none";
+                document.getElementById("custom-client-id-input").value = GOOGLE_CLIENT_ID;
+            }
+
+            function saveCustomClientId() {
+                const val = document.getElementById("custom-client-id-input").value.trim();
+                if (val) {
+                    GOOGLE_CLIENT_ID = val;
+                    localStorage.setItem("whopays_google_client_id", val);
+                    showToast("Google Client ID guardado");
+                    document.getElementById("client-id-config-box").style.display = "none";
+                }
+            }
+
+            function openAuthModal() {
+                const savedUser = JSON.parse(localStorage.getItem("whopays_user") || "null");
+                if (savedUser) {
+                    showProfileView(savedUser);
+                } else {
+                    showLoginView();
+                }
+                authModal.classList.add("visible");
+            }
+
+            function closeAuthModal() {
+                authModal.classList.remove("visible");
+            }
+
+            function showLoginView() {
+                document.getElementById("auth-view-login").style.display = "block";
+                document.getElementById("auth-view-profile").style.display = "none";
+            }
+
+            function showProfileView(user) {
+                document.getElementById("auth-view-login").style.display = "none";
+                document.getElementById("auth-view-profile").style.display = "block";
+
+                document.getElementById("profile-user-name").innerText = user.fullName || user.name;
+                document.getElementById("profile-user-email").innerText = user.email || "Cuenta Vinculada";
+
+                const avatarEl = document.getElementById("profile-avatar-big");
+                if (user.avatar) {
+                    avatarEl.innerHTML = `<img src="${user.avatar}" alt="Avatar" />`;
+                } else {
+                    const initial = (user.name || "M")[0].toUpperCase();
+                    avatarEl.innerText = initial;
+                }
+
+                updateProfileStats();
+            }
+
+            function updateProfileStats() {
+                const debts = JSON.parse(localStorage.getItem("whopays_debts") || "[]");
+                const countEl = document.getElementById("stat-debts-count");
+                if (countEl) countEl.innerText = debts.length;
+
+                const isPro = localStorage.getItem("whopays_pro_status") === "active";
+                const tierEl = document.getElementById("stat-tier");
+                if (tierEl) {
+                    tierEl.innerText = isPro ? "PRO" : "GRATIS";
+                    tierEl.style.color = isPro ? "#FF9F0A" : "#30D158";
+                }
+            }
+
+            function setUserSession(user) {
+                localStorage.setItem("whopays_user", JSON.stringify(user));
+                userDisplay.innerText = user.name;
+                if (user.avatar) {
+                    userAvatarMini.innerHTML = `<img src="${user.avatar}" alt="Avatar" />`;
+                } else {
+                    const initial = (user.name || "M")[0].toUpperCase();
+                    userAvatarMini.innerText = initial;
+                }
+                updateProfileStats();
+            }
+
+            function loginWithGoogleOAuth() {
+                if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
+                    showToast("Cargando librerías de Google...");
+                    return;
+                }
+
+                try {
+                    const client = google.accounts.oauth2.initTokenClient({
+                        client_id: GOOGLE_CLIENT_ID,
+                        scope: "email profile openid",
+                        callback: async (tokenResponse) => {
+                            if (tokenResponse && tokenResponse.access_token) {
+                                try {
+                                    const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+                                        headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+                                    });
+                                    const profile = await res.json();
+                                    const user = {
+                                        name: profile.given_name || profile.name || "Marco",
+                                        fullName: profile.name || "Marco Huamani",
+                                        email: profile.email,
+                                        avatar: profile.picture,
+                                        provider: "google",
+                                    };
+                                    setUserSession(user);
+                                    playSuccessChime();
+                                    showToast(`Bienvenido, ${user.name}`);
+                                    closeAuthModal();
+                                } catch (e) {
+                                    console.error("Error al obtener perfil:", e);
+                                    showToast("Error al conectar con Google");
+                                }
+                            }
+                        },
+                        error_callback: (err) => {
+                            console.warn("OAuth Error:", err);
+                            showToast("Autenticación cancelada");
+                        },
+                    });
+                    client.requestAccessToken();
+                } catch (err) {
+                    console.error("Error iniciando Google OAuth:", err);
+                    showToast("Error al iniciar ventana de Google");
+                }
+            }
+
+            function logoutUser() {
+                localStorage.removeItem("whopays_user");
+                userDisplay.innerText = "Invitado";
+                userAvatarMini.innerHTML = "M";
+                showToast("Sesión cerrada");
+                showLoginView();
+            }
+
+            function deleteAccountAndData() {
+                const confirmed = confirm(
+                    "¿Estás seguro de que deseas eliminar tu cuenta y purgar todos tus datos?\n\nEsta acción borrará irreversiblemente tu perfil, todas tus deudas registradas, amigos guardados y suscripciones.",
+                );
+                if (confirmed) {
+                    localStorage.clear();
+                    userDisplay.innerText = "Invitado";
+                    userAvatarMini.innerHTML = "M";
+                    showToast("Cuenta y datos eliminados");
+                    closeAuthModal();
+                    dismissSheet();
+                }
+            }
+
+            // Cargar usuario inicial al arrancar
+            const existingUser = JSON.parse(localStorage.getItem("whopays_user") || "null");
+            if (existingUser) {
+                setUserSession(existingUser);
+            }
+        </script>
+    </body>
 </html>
