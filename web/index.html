@@ -614,6 +614,12 @@
                 <div id="method-applepay" class="method-chip" onclick="selectMethod('applepay')">Apple Pay</div>
             </div>
 
+            <!-- QR Dinámico del Método Seleccionado -->
+            <div id="payment-qr-container" style="margin: 10px auto; width: 140px; height: 140px; border-radius: 12px; background: #FFF; padding: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,0.4);">
+                <img id="payment-qr-img" src="assets/lemon-qr.jpeg" style="width: 100%; height: 100%; object-fit: contain;" alt="QR de Pago" />
+            </div>
+            <div id="payment-qr-label" style="font-size: 11px; color: #8E8E93; margin-bottom: 12px;">Escanea con tu app Lemon ($1.99 USD)</div>
+
             <button id="btn-pay-action" class="btn-primary" onclick="executePayment()">Pagar $1.99 y Desbloquear Mesa</button>
             <button class="btn-secondary" onclick="closePaywallModal()">Volver a 1 Celular</button>
         </div>
@@ -656,7 +662,17 @@
                     Iniciar Sesión con Google
                 </button>
 
-                <button class="btn-secondary" onclick="closeAuthModal()" style="margin-top: 10px;">Continuar como Invitado</button>
+                <button class="btn-secondary" onclick="toggleClientIdConfig()" style="font-size: 11px; margin-top: 10px; color: #636366;">
+                    ⚙️ Configurar Google Client ID
+                </button>
+
+                <div id="client-id-config-box" style="display: none; margin-top: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 10px; text-align: left;">
+                    <label style="font-size: 10px; color: #8E8E93; display: block; margin-bottom: 4px;">Tu Web Client ID (Google Cloud Console)</label>
+                    <input type="text" id="custom-client-id-input" placeholder="xxxx.apps.googleusercontent.com" style="width: 100%; background: #090A0D; border: 1px solid rgba(255,255,255,0.1); color: #FFF; padding: 8px 10px; border-radius: 8px; font-size: 11px; margin-bottom: 8px; outline: none;" />
+                    <button class="btn-primary" onclick="saveCustomClientId()" style="padding: 8px; font-size: 12px;">Guardar Client ID</button>
+                </div>
+
+                <button class="btn-secondary" onclick="closeAuthModal()" style="margin-top: 8px;">Continuar como Invitado</button>
             </div>
 
             <!-- Vista 2: Perfil Si Ya Inició Sesión -->
@@ -1002,9 +1018,10 @@
 
             playOutcomeSound();
 
+            // Tiempo prolongado (2.6s) para ver al perdedor con ¡TÚ PAGAS! antes del sheet
             setTimeout(() => {
                 openDebtSheet();
-            }, 600);
+            }, 2600);
         }
 
         function openDebtSheet() {
@@ -1175,12 +1192,38 @@
             } else {
                 payBtn.innerText = 'Suscribirme PRO ($9.99/mes)';
             }
+            updatePaymentQrView();
         }
 
         function selectMethod(method) {
             selectedMethod = method;
             document.querySelectorAll('.method-chip').forEach(c => c.classList.remove('selected'));
             document.getElementById('method-' + method).classList.add('selected');
+            updatePaymentQrView();
+        }
+
+        function updatePaymentQrView() {
+            const qrContainer = document.getElementById('payment-qr-container');
+            const qrImg = document.getElementById('payment-qr-img');
+            const qrLabel = document.getElementById('payment-qr-label');
+            const price = selectedPlan === 'pass' ? '$1.99 USD' : '$9.99 USD';
+
+            if (selectedMethod === 'lemon') {
+                qrContainer.style.display = 'flex';
+                qrImg.src = 'assets/lemon-qr.jpeg';
+                qrLabel.innerText = `Escanea con tu app Lemon (${price})`;
+            } else if (selectedMethod === 'yape') {
+                qrContainer.style.display = 'flex';
+                qrImg.src = 'assets/yape-qr.jpeg';
+                const soles = selectedPlan === 'pass' ? 'S/ 7.20' : 'S/ 36.00';
+                qrLabel.innerText = `Escanea con Yape (${soles} / ${price})`;
+            } else if (selectedMethod === 'card') {
+                qrContainer.style.display = 'none';
+                qrLabel.innerText = `Procesamiento con Tarjeta (${price})`;
+            } else if (selectedMethod === 'applepay') {
+                qrContainer.style.display = 'none';
+                qrLabel.innerText = `Doble toque con Apple Pay (${price})`;
+            }
         }
 
         function executePayment() {
@@ -1216,7 +1259,23 @@
         // ==========================================
         // AUTENTICACIÓN GOOGLE REAL & BORRADO DE CUENTA
         // ==========================================
-        const GOOGLE_CLIENT_ID = "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com";
+        let GOOGLE_CLIENT_ID = localStorage.getItem('whopays_google_client_id') || "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com";
+
+        function toggleClientIdConfig() {
+            const box = document.getElementById('client-id-config-box');
+            box.style.display = box.style.display === 'none' ? 'block' : 'none';
+            document.getElementById('custom-client-id-input').value = GOOGLE_CLIENT_ID;
+        }
+
+        function saveCustomClientId() {
+            const val = document.getElementById('custom-client-id-input').value.trim();
+            if (val) {
+                GOOGLE_CLIENT_ID = val;
+                localStorage.setItem('whopays_google_client_id', val);
+                showToast("Google Client ID guardado");
+                document.getElementById('client-id-config-box').style.display = 'none';
+            }
+        }
 
         function openAuthModal() {
             const savedUser = JSON.parse(localStorage.getItem('whopays_user') || 'null');
