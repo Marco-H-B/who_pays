@@ -1,4 +1,5 @@
 .vscode/
 wiki/
 todo.md
-
+.agents/
+skills-lock.json

@@ -14,7 +14,6 @@
             box-sizing: border-box;
             user-select: none;
             -webkit-user-select: none;
-            touch-action: none;
         }
         body, html {
             width: 100%;
@@ -32,38 +31,68 @@
             top: 0;
             left: 0;
             z-index: 1;
+            touch-action: none;
         }
 
-        /* Barra Superior de Modo */
-        #top-bar {
+        /* Barra Superior debajo de la Isla Dinamica del iPhone 15 */
+        #header-container {
             position: absolute;
-            top: env(safe-area-inset-top, 20px);
-            left: 50%;
-            transform: translateX(-50%);
+            top: max(calc(env(safe-area-inset-top) + 16px), 64px);
+            left: 0;
+            width: 100%;
             display: flex;
-            background: rgba(25, 26, 30, 0.75);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 50;
+            pointer-events: none;
+        }
+        #top-bar {
+            display: flex;
+            background: rgba(26, 27, 32, 0.88);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
             padding: 4px;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            z-index: 10;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            pointer-events: auto;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
         }
         .mode-btn {
             background: transparent;
             border: none;
             color: #8E8E93;
-            padding: 6px 14px;
-            font-size: 13px;
+            padding: 7px 14px;
+            font-size: 12px;
             font-weight: 500;
-            border-radius: 16px;
+            border-radius: 18px;
             cursor: pointer;
             transition: all 0.2s ease;
+            white-space: nowrap;
         }
         .mode-btn.active {
             background: #2C2C2E;
             color: #FFFFFF;
             font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        /* Boton de Perfil / Login con Google */
+        #auth-btn {
+            background: rgba(26, 27, 32, 0.88);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
+            padding: 7px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #E5E5EA;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            pointer-events: auto;
+            cursor: pointer;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
         }
 
         /* Indicacion central en reposo */
@@ -79,7 +108,7 @@
             z-index: 2;
         }
         #hint h1 {
-            font-size: 22px;
+            font-size: 24px;
             font-weight: 500;
             letter-spacing: -0.01em;
             margin-bottom: 6px;
@@ -95,28 +124,29 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            background: rgba(22, 23, 27, 0.95);
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
+            background: rgba(20, 21, 25, 0.96);
+            backdrop-filter: blur(35px);
+            -webkit-backdrop-filter: blur(35px);
             border-top: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 24px 24px 0 0;
-            padding: 24px 20px calc(24px + env(safe-area-inset-bottom, 10px)) 20px;
+            border-radius: 26px 26px 0 0;
+            padding: 20px 20px calc(24px + env(safe-area-inset-bottom, 12px)) 20px;
             transform: translateY(105%);
             transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-            z-index: 20;
+            z-index: 100;
+            touch-action: auto;
         }
         #action-sheet.visible {
             transform: translateY(0%);
         }
         .sheet-handle {
-            width: 36px;
+            width: 40px;
             height: 4px;
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.25);
             border-radius: 2px;
             margin: 0 auto 16px auto;
         }
         .sheet-title {
-            font-size: 18px;
+            font-size: 19px;
             font-weight: 600;
             margin-bottom: 14px;
         }
@@ -125,7 +155,7 @@
         }
         .input-group label {
             display: block;
-            font-size: 12px;
+            font-size: 11px;
             color: #8E8E93;
             margin-bottom: 6px;
             text-transform: uppercase;
@@ -133,13 +163,14 @@
         }
         .input-group input {
             width: 100%;
-            background: #101114;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #0E0F12;
+            border: 1px solid rgba(255, 255, 255, 0.12);
             color: #FFF;
-            padding: 12px 14px;
-            border-radius: 10px;
+            padding: 13px 14px;
+            border-radius: 12px;
             font-size: 15px;
             outline: none;
+            -webkit-appearance: none;
         }
         .chips-container {
             display: flex;
@@ -161,8 +192,8 @@
             background: #3A3D45;
             color: #FFF;
             border: none;
-            padding: 13px;
-            border-radius: 12px;
+            padding: 14px;
+            border-radius: 14px;
             font-size: 15px;
             font-weight: 600;
             cursor: pointer;
@@ -175,7 +206,7 @@
             border: none;
             padding: 10px;
             font-size: 13px;
-            margin-top: 6px;
+            margin-top: 4px;
             cursor: pointer;
         }
 
@@ -194,7 +225,7 @@
             align-items: center;
             justify-content: center;
             padding: 24px;
-            z-index: 30;
+            z-index: 120;
         }
         #qr-modal.visible {
             display: flex;
@@ -202,7 +233,7 @@
         .qr-card {
             background: #141518;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
+            border-radius: 22px;
             padding: 24px;
             text-align: center;
             max-width: 320px;
@@ -226,8 +257,6 @@
             color: #FFF;
             margin-bottom: 6px;
         }
-
-        /* Temporizador Cromático de 3 Minutos */
         .timer-badge {
             display: inline-block;
             font-family: monospace;
@@ -238,12 +267,63 @@
             margin: 10px 0;
             transition: color 0.3s ease, border-color 0.3s ease;
         }
+
+        /* Modal de Autenticacion con Google */
+        #auth-modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(8, 9, 10, 0.94);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            z-index: 150;
+        }
+        #auth-modal.visible {
+            display: flex;
+        }
+        .auth-card {
+            background: #141518;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 22px;
+            padding: 28px 24px;
+            text-align: center;
+            max-width: 320px;
+            width: 100%;
+        }
+        .btn-google {
+            background: #FFFFFF;
+            color: #1F1F1F;
+            border: none;
+            width: 100%;
+            padding: 13px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            margin-top: 16px;
+        }
     </style>
 </head>
 <body>
-    <div id="top-bar">
-        <button id="btn-mode-local" class="mode-btn active" onclick="switchMode('local')">Modo Local</button>
-        <button id="btn-mode-qr" class="mode-btn" onclick="switchMode('qr')">Mesa QR</button>
+    <div id="header-container">
+        <div id="top-bar">
+            <button id="btn-mode-local" class="mode-btn active" onclick="switchMode('local')">1 Celular (2-5)</button>
+            <button id="btn-mode-qr" class="mode-btn" onclick="switchMode('qr')">Varios Celulares (QR)</button>
+        </div>
+
+        <button id="auth-btn" onclick="openAuthModal()">
+            <span id="user-display">Invitado</span>
+        </button>
     </div>
 
     <div id="hint">
@@ -256,20 +336,16 @@
     <!-- Micro-Hoja (Action Sheet) -->
     <div id="action-sheet">
         <div class="sheet-handle"></div>
-        <div class="sheet-title">Anotar en Libro de Deudas</div>
+        <div class="sheet-title">¿Quién perdió?</div>
 
-        <div class="input-group">
+        <div id="chips-section" class="input-group" style="display: none;">
             <label>Amigos Recientes</label>
-            <div id="chips-list" class="chips-container">
-                <span class="chip" onclick="selectChip('Marco')">Marco</span>
-                <span class="chip" onclick="selectChip('Lucas')">Lucas</span>
-                <span class="chip" onclick="selectChip('Pedro')">Pedro</span>
-            </div>
+            <div id="chips-list" class="chips-container"></div>
         </div>
 
         <div class="input-group">
-            <label>¿Quién perdió?</label>
-            <input type="text" id="loser-name-input" placeholder="Nombre o apodo..." />
+            <label>Nombre o Apodo del Perdedor</label>
+            <input type="text" id="loser-name-input" placeholder="Escribe el nombre aquí..." />
         </div>
 
         <div class="input-group">
@@ -277,16 +353,16 @@
             <input type="number" id="bill-amount-input" placeholder="S/ 0.00" />
         </div>
 
-        <button class="btn-primary" onclick="saveDebt()">Guardar Deuda</button>
-        <button class="btn-secondary" onclick="dismissSheet()">Jugar de Nuevo</button>
+        <button class="btn-primary" onclick="saveDebt()">Guardar en Deudas</button>
+        <button class="btn-secondary" onclick="dismissSheet()">Volver a Jugar</button>
     </div>
 
     <!-- Modal de Mesa QR -->
     <div id="qr-modal">
         <div class="qr-card">
-            <div style="font-size: 12px; color: #8E8E93; text-transform: uppercase;">Mesa Sincronizada QR</div>
+            <div style="font-size: 11px; color: #8E8E93; text-transform: uppercase; letter-spacing: 0.05em;">Modo Varios Celulares</div>
             <div class="qr-room-code">SALA 7F2A</div>
-            <p style="font-size: 13px; color: rgba(255,255,255,0.6);">Escanea con la cámara de tu teléfono</p>
+            <p style="font-size: 13px; color: rgba(255,255,255,0.6);">Escanea con la cámara de tu teléfono para unirte</p>
             
             <div class="qr-img">
                 <img id="qr-image" src="" alt="Código QR de la Sala" style="width: 100%; height: 100%;" />
@@ -296,8 +372,27 @@
                 03:00
             </div>
 
-            <p id="qr-status" style="font-size: 12px; color: #8E8E93; margin-bottom: 12px;">Esperando que se unan (6+ comensales)</p>
-            <button class="btn-primary" onclick="switchMode('local')">Cerrar y Volver a Local</button>
+            <p id="qr-status" style="font-size: 12px; color: #8E8E93; margin-bottom: 12px;">Esperando que se conecten</p>
+            <button class="btn-primary" onclick="switchMode('local')">Volver al Modo 1 Celular</button>
+        </div>
+    </div>
+
+    <!-- Modal de Login con Google -->
+    <div id="auth-modal">
+        <div class="auth-card">
+            <h2 style="font-size: 18px; margin-bottom: 8px;">Tu Perfil Social</h2>
+            <p style="font-size: 13px; color: #8E8E93;">Inicia sesión para sincronizar tu Libro de Deudas en cualquier dispositivo.</p>
+            
+            <button class="btn-google" onclick="simulateGoogleLogin()">
+                <svg width="18" height="18" viewBox="0 0 18 18">
+                    <path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.49h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.92c1.71-1.57 2.68-3.89 2.68-6.62z"/>
+                    <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.83.87-3.04.87-2.34 0-4.33-1.58-5.04-3.71H.95v2.33C2.43 15.98 5.48 18 9 18z"/>
+                    <path fill="#FBBC05" d="M3.96 10.72A5.41 5.41 0 0 1 3.68 9c0-.6.1-1.18.28-1.72V4.95H.95A9.01 9.01 0 0 0 0 9c0 1.45.35 2.82.95 4.05l3.01-2.33z"/>
+                    <path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.59C13.46.89 11.43 0 9 0 5.48 0 2.43 2.02.95 4.95l3.01 2.33c.71-2.13 2.7-3.7 5.04-3.7z"/>
+                </svg>
+                Continuar con Google
+            </button>
+            <button class="btn-secondary" onclick="closeAuthModal()">Continuar como Invitado</button>
         </div>
     </div>
 
@@ -307,10 +402,14 @@
         const hint = document.getElementById('hint');
         const sheet = document.getElementById('action-sheet');
         const qrModal = document.getElementById('qr-modal');
+        const authModal = document.getElementById('auth-modal');
         const loserInput = document.getElementById('loser-name-input');
         const amountInput = document.getElementById('bill-amount-input');
         const timerBox = document.getElementById('timer-box');
         const qrImg = document.getElementById('qr-image');
+        const chipsSection = document.getElementById('chips-section');
+        const chipsList = document.getElementById('chips-list');
+        const userDisplay = document.getElementById('user-display');
 
         let width = window.innerWidth;
         let height = window.innerHeight;
@@ -407,9 +506,20 @@
             osc.stop(audioCtx.currentTime + 0.05);
         }
 
-        // Manejo de eventos multitactiles
+        // Filtro estricto: Si el toque ocurre en botones o modales, no generar aros
+        function isInteractiveElement(target) {
+            return target.closest('#header-container') ||
+                   target.closest('#top-bar') ||
+                   target.closest('#auth-btn') ||
+                   target.closest('#action-sheet') ||
+                   target.closest('#qr-modal') ||
+                   target.closest('#auth-modal') ||
+                   target.tagName === 'BUTTON' ||
+                   target.tagName === 'INPUT';
+        }
+
         window.addEventListener('touchstart', (e) => {
-            if (sheet.classList.contains('visible') || qrModal.classList.contains('visible')) return;
+            if (isInteractiveElement(e.target)) return;
             e.preventDefault();
             initAudio();
 
@@ -421,7 +531,7 @@
         }, { passive: false });
 
         window.addEventListener('touchmove', (e) => {
-            if (sheet.classList.contains('visible') || qrModal.classList.contains('visible')) return;
+            if (isInteractiveElement(e.target)) return;
             e.preventDefault();
             for (let i = 0; i < e.changedTouches.length; i++) {
                 const t = e.changedTouches[i];
@@ -432,7 +542,7 @@
         }, { passive: false });
 
         window.addEventListener('touchend', (e) => {
-            if (sheet.classList.contains('visible') || qrModal.classList.contains('visible')) return;
+            if (isInteractiveElement(e.target)) return;
             e.preventDefault();
             for (let i = 0; i < e.changedTouches.length; i++) {
                 touches.delete(e.changedTouches[i].identifier);
@@ -441,7 +551,7 @@
         }, { passive: false });
 
         window.addEventListener('touchcancel', (e) => {
-            if (sheet.classList.contains('visible') || qrModal.classList.contains('visible')) return;
+            if (isInteractiveElement(e.target)) return;
             e.preventDefault();
             for (let i = 0; i < e.changedTouches.length; i++) {
                 touches.delete(e.changedTouches[i].identifier);
@@ -449,7 +559,6 @@
             evaluateState();
         }, { passive: false });
 
-        // Evaluacion de estados y regla de reinicio ante cualquier cambio en N
         function evaluateState() {
             if (gameState === STATE.OUTCOME) return;
 
@@ -458,12 +567,10 @@
 
             if (currentCount >= 2) {
                 if (gameState === STATE.IDLE) {
-                    // Arranca la ronda
                     gameState = STATE.TENSION;
                     tensionStart = performance.now();
                     playPop();
                 } else if (gameState === STATE.TENSION && currentCount !== previousFingerCount) {
-                    // Protocolo de justicia: si se agrega o quita un dedo, se reinicia a 3.0s
                     tensionStart = performance.now();
                     playAbortSound();
                 }
@@ -477,14 +584,13 @@
             previousFingerCount = currentCount;
         }
 
-        // Bucle de renderizado continuo a 60 FPS
+        // Bucle continuo a 60 FPS
         function render(now) {
             ctx.clearRect(0, 0, width, height);
 
             if (gameState === STATE.TENSION) {
                 const elapsed = (now - tensionStart) / 1000;
                 if (elapsed >= 3.0) {
-                    // Veredicto CSPRNG
                     const ids = Array.from(touches.keys());
                     const randomBuffer = new Uint32Array(1);
                     window.crypto.getRandomValues(randomBuffer);
@@ -494,16 +600,16 @@
                     gameState = STATE.OUTCOME;
                     playOutcomeSound();
 
-                    // Abrir micro-hoja inferior (Action Sheet)
+                    // Cargar chips reales guardados previamente
+                    loadRecentFriendsChips();
+
                     setTimeout(() => {
                         sheet.classList.add('visible');
                     }, 400);
                 }
             }
 
-            // Dibujar aros
             if (gameState === STATE.OUTCOME && frozenLoserPos) {
-                // Aro perdedor congelado en pantalla
                 ctx.save();
                 ctx.beginPath();
                 ctx.arc(frozenLoserPos.x, frozenLoserPos.y, 68, 0, Math.PI * 2);
@@ -543,7 +649,26 @@
         }
         requestAnimationFrame(render);
 
-        // Acciones de la Micro-Hoja (Action Sheet)
+        // Amigos reales desde localStorage (cero datos inventados)
+        function loadRecentFriendsChips() {
+            const savedFriends = JSON.parse(localStorage.getItem('whopays_friends') || '[]');
+            chipsList.innerHTML = '';
+
+            if (savedFriends.length > 0) {
+                chipsSection.style.display = 'block';
+                savedFriends.forEach(friend => {
+                    const chip = document.createElement('span');
+                    chip.className = 'chip';
+                    chip.innerText = friend;
+                    chip.onclick = () => selectChip(friend);
+                    chipsList.appendChild(chip);
+                });
+            } else {
+                // Primera vez de uso: Oculta la seccion de chips porque no hay ninguno
+                chipsSection.style.display = 'none';
+            }
+        }
+
         function selectChip(name) {
             loserInput.value = name;
         }
@@ -552,10 +677,12 @@
             const name = loserInput.value.trim() || 'Desconocido';
             const amount = amountInput.value.trim() || '0.00';
             
-            // Guardar en historial local
-            let debts = JSON.parse(localStorage.getItem('whopays_debts') || '[]');
-            debts.push({ name, amount, date: new Date().toISOString() });
-            localStorage.setItem('whopays_debts', JSON.stringify(debts));
+            // Guardar en amigos recientes
+            let savedFriends = JSON.parse(localStorage.getItem('whopays_friends') || '[]');
+            if (name !== 'Desconocido' && !savedFriends.includes(name)) {
+                savedFriends.push(name);
+                localStorage.setItem('whopays_friends', JSON.stringify(savedFriends));
+            }
 
             dismissSheet();
         }
@@ -571,10 +698,7 @@
             evaluateState();
         }
 
-        // Modo Mesa QR y Temporizador de 3 Minutos
-        let timerSeconds = 180;
-        let timerInterval = null;
-
+        // Modos de Juego
         function switchMode(mode) {
             const btnLocal = document.getElementById('btn-mode-local');
             const btnQr = document.getElementById('btn-mode-qr');
@@ -584,7 +708,6 @@
                 btnQr.classList.add('active');
                 qrModal.classList.add('visible');
 
-                // Generar codigo QR dinamico con la URL actual
                 const roomUrl = window.location.origin + '/?room=7F2A';
                 qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(roomUrl);
 
@@ -597,6 +720,10 @@
             }
         }
 
+        // Temporizador de 3 Minutos para Mesa QR
+        let timerSeconds = 180;
+        let timerInterval = null;
+
         function startCountdown() {
             clearInterval(timerInterval);
             timerSeconds = 180;
@@ -606,7 +733,6 @@
                 timerSeconds--;
                 updateTimerDisplay();
 
-                // Cuenta sonora en los ultimos 10 segundos
                 if (timerSeconds <= 10 && timerSeconds > 3) {
                     playTick(800);
                 } else if (timerSeconds <= 3 && timerSeconds > 0) {
@@ -614,7 +740,7 @@
                 } else if (timerSeconds === 0) {
                     playTick(150);
                     clearInterval(timerInterval);
-                    document.getElementById('qr-status').innerText = 'Sesion Expirada (Memoria Liberada)';
+                    document.getElementById('qr-status').innerText = 'Sesión Expirada (Memoria Liberada)';
                 }
             }, 1000);
         }
@@ -624,17 +750,37 @@
             const s = (timerSeconds % 60).toString().padStart(2, '0');
             timerBox.innerText = `${m}:${s}`;
 
-            // Gradiente Cromatico Dinamico (Apple HIG)
             if (timerSeconds > 90) {
-                timerBox.style.color = '#30D158'; // Verde esmeralda
+                timerBox.style.color = '#30D158';
                 timerBox.style.borderColor = '#30D158';
             } else if (timerSeconds > 30) {
-                timerBox.style.color = '#FFD60A'; // Amarillo ambar
+                timerBox.style.color = '#FFD60A';
                 timerBox.style.borderColor = '#FFD60A';
             } else {
-                timerBox.style.color = '#FF453A'; // Rojo carmesi
+                timerBox.style.color = '#FF453A';
                 timerBox.style.borderColor = '#FF453A';
             }
+        }
+
+        // Modales de Auth
+        function openAuthModal() {
+            authModal.classList.add('visible');
+        }
+
+        function closeAuthModal() {
+            authModal.classList.remove('visible');
+        }
+
+        function simulateGoogleLogin() {
+            localStorage.setItem('whopays_user', 'Marco');
+            userDisplay.innerText = 'Marco';
+            closeAuthModal();
+        }
+
+        // Cargar estado inicial de usuario
+        const savedUser = localStorage.getItem('whopays_user');
+        if (savedUser) {
+            userDisplay.innerText = savedUser;
         }
     </script>
 </body>
