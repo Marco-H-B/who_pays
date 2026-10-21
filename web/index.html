@@ -22,12 +22,51 @@
             background-color: #08090A;
             overflow: hidden;
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+            color: #F4F4F6;
         }
         canvas {
             display: block;
             width: 100vw;
             height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
         }
+
+        /* Barra Superior de Modo */
+        #top-bar {
+            position: absolute;
+            top: env(safe-area-inset-top, 20px);
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            background: rgba(25, 26, 30, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 4px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 10;
+        }
+        .mode-btn {
+            background: transparent;
+            border: none;
+            color: #8E8E93;
+            padding: 6px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .mode-btn.active {
+            background: #2C2C2E;
+            color: #FFFFFF;
+            font-weight: 600;
+        }
+
+        /* Indicacion central en reposo */
         #hint {
             position: absolute;
             top: 50%;
@@ -37,9 +76,10 @@
             color: rgba(255, 255, 255, 0.4);
             pointer-events: none;
             transition: opacity 0.3s ease;
+            z-index: 2;
         }
         #hint h1 {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: 500;
             letter-spacing: -0.01em;
             margin-bottom: 6px;
@@ -48,20 +88,229 @@
             font-size: 13px;
             color: rgba(255, 255, 255, 0.25);
         }
+
+        /* Micro-Hoja (Action Sheet) de Registro de Deuda */
+        #action-sheet {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(22, 23, 27, 0.95);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 24px 24px 0 0;
+            padding: 24px 20px calc(24px + env(safe-area-inset-bottom, 10px)) 20px;
+            transform: translateY(105%);
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 20;
+        }
+        #action-sheet.visible {
+            transform: translateY(0%);
+        }
+        .sheet-handle {
+            width: 36px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            margin: 0 auto 16px auto;
+        }
+        .sheet-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 14px;
+        }
+        .input-group {
+            margin-bottom: 14px;
+        }
+        .input-group label {
+            display: block;
+            font-size: 12px;
+            color: #8E8E93;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .input-group input {
+            width: 100%;
+            background: #101114;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #FFF;
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+        }
+        .chips-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .chip {
+            background: #26282E;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 6px 12px;
+            border-radius: 14px;
+            font-size: 13px;
+            color: #DDD;
+            cursor: pointer;
+        }
+        .btn-primary {
+            width: 100%;
+            background: #3A3D45;
+            color: #FFF;
+            border: none;
+            padding: 13px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 4px;
+        }
+        .btn-secondary {
+            width: 100%;
+            background: transparent;
+            color: #8E8E93;
+            border: none;
+            padding: 10px;
+            font-size: 13px;
+            margin-top: 6px;
+            cursor: pointer;
+        }
+
+        /* Modal de Mesa QR */
+        #qr-modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(8, 9, 10, 0.96);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            z-index: 30;
+        }
+        #qr-modal.visible {
+            display: flex;
+        }
+        .qr-card {
+            background: #141518;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 24px;
+            text-align: center;
+            max-width: 320px;
+            width: 100%;
+        }
+        .qr-img {
+            width: 190px;
+            height: 190px;
+            border-radius: 12px;
+            background: #FFF;
+            margin: 16px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .qr-room-code {
+            font-family: monospace;
+            font-size: 24px;
+            letter-spacing: 0.15em;
+            color: #FFF;
+            margin-bottom: 6px;
+        }
+
+        /* Temporizador Cromático de 3 Minutos */
+        .timer-badge {
+            display: inline-block;
+            font-family: monospace;
+            font-size: 18px;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 12px;
+            margin: 10px 0;
+            transition: color 0.3s ease, border-color 0.3s ease;
+        }
     </style>
 </head>
 <body>
+    <div id="top-bar">
+        <button id="btn-mode-local" class="mode-btn active" onclick="switchMode('local')">Modo Local</button>
+        <button id="btn-mode-qr" class="mode-btn" onclick="switchMode('qr')">Mesa QR</button>
+    </div>
+
     <div id="hint">
         <h1>Pon tu dedo</h1>
         <p>2 a 5 jugadores en pantalla</p>
     </div>
+
     <canvas id="canvas"></canvas>
 
+    <!-- Micro-Hoja (Action Sheet) -->
+    <div id="action-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Anotar en Libro de Deudas</div>
+
+        <div class="input-group">
+            <label>Amigos Recientes</label>
+            <div id="chips-list" class="chips-container">
+                <span class="chip" onclick="selectChip('Marco')">Marco</span>
+                <span class="chip" onclick="selectChip('Lucas')">Lucas</span>
+                <span class="chip" onclick="selectChip('Pedro')">Pedro</span>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>¿Quién perdió?</label>
+            <input type="text" id="loser-name-input" placeholder="Nombre o apodo..." />
+        </div>
+
+        <div class="input-group">
+            <label>Monto de la cuenta (Opcional)</label>
+            <input type="number" id="bill-amount-input" placeholder="S/ 0.00" />
+        </div>
+
+        <button class="btn-primary" onclick="saveDebt()">Guardar Deuda</button>
+        <button class="btn-secondary" onclick="dismissSheet()">Jugar de Nuevo</button>
+    </div>
+
+    <!-- Modal de Mesa QR -->
+    <div id="qr-modal">
+        <div class="qr-card">
+            <div style="font-size: 12px; color: #8E8E93; text-transform: uppercase;">Mesa Sincronizada QR</div>
+            <div class="qr-room-code">SALA 7F2A</div>
+            <p style="font-size: 13px; color: rgba(255,255,255,0.6);">Escanea con la cámara de tu teléfono</p>
+            
+            <div class="qr-img">
+                <img id="qr-image" src="" alt="Código QR de la Sala" style="width: 100%; height: 100%;" />
+            </div>
+
+            <div id="timer-box" class="timer-badge" style="color: #30D158; border: 1px solid #30D158;">
+                03:00
+            </div>
+
+            <p id="qr-status" style="font-size: 12px; color: #8E8E93; margin-bottom: 12px;">Esperando que se unan (6+ comensales)</p>
+            <button class="btn-primary" onclick="switchMode('local')">Cerrar y Volver a Local</button>
+        </div>
+    </div>
+
     <script>
-        // Configuracion inicial del lienzo
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const hint = document.getElementById('hint');
+        const sheet = document.getElementById('action-sheet');
+        const qrModal = document.getElementById('qr-modal');
+        const loserInput = document.getElementById('loser-name-input');
+        const amountInput = document.getElementById('bill-amount-input');
+        const timerBox = document.getElementById('timer-box');
+        const qrImg = document.getElementById('qr-image');
 
         let width = window.innerWidth;
         let height = window.innerHeight;
@@ -76,16 +325,18 @@
         window.addEventListener('resize', resize);
         resize();
 
-        // Estados del juego
+        // Estados de maquina
         const STATE = { IDLE: 'IDLE', TENSION: 'TENSION', OUTCOME: 'OUTCOME' };
         let gameState = STATE.IDLE;
         let tensionStart = 0;
         let loserId = null;
+        let frozenLoserPos = null;
+        let previousFingerCount = 0;
 
-        // Mapa de toques activos
+        // Mapa de toques
         const touches = new Map();
 
-        // Motor de audio procedural sintetizado (Web Audio API)
+        // Motor de audio procedural
         let audioCtx = null;
         function initAudio() {
             if (!audioCtx) {
@@ -100,15 +351,28 @@
             if (!audioCtx) return;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(120, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.05);
-            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+            osc.frequency.setValueAtTime(140, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.04);
+            gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             osc.start();
-            osc.stop(audioCtx.currentTime + 0.05);
+            osc.stop(audioCtx.currentTime + 0.04);
+        }
+
+        function playAbortSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.frequency.setValueAtTime(250, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.08);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.08);
         }
 
         function playOutcomeSound() {
@@ -116,9 +380,9 @@
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = 'triangle';
-            osc.frequency.setValueAtTime(80, audioCtx.currentTime);
+            osc.frequency.setValueAtTime(70, audioCtx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.25);
-            gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.7, audioCtx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
@@ -126,15 +390,28 @@
             osc.stop(audioCtx.currentTime + 0.3);
 
             if (navigator.vibrate) {
-                navigator.vibrate([200]);
+                navigator.vibrate([250]);
             }
         }
 
-        // Manejo de eventos multitactiles nativos
+        function playTick(freq) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.05);
+        }
+
+        // Manejo de eventos multitactiles
         window.addEventListener('touchstart', (e) => {
+            if (sheet.classList.contains('visible') || qrModal.classList.contains('visible')) return;
             e.preventDefault();
             initAudio();
-            playPop();
 
             for (let i = 0; i < e.changedTouches.length; i++) {
                 const t = e.changedTouches[i];
@@ -144,6 +421,7 @@
         }, { passive: false });
 
         window.addEventListener('touchmove', (e) => {
+            if (sheet.classList.contains('visible') || qrModal.classList.contains('visible')) return;
             e.preventDefault();
             for (let i = 0; i < e.changedTouches.length; i++) {
                 const t = e.changedTouches[i];
@@ -154,6 +432,7 @@
         }, { passive: false });
 
         window.addEventListener('touchend', (e) => {
+            if (sheet.classList.contains('visible') || qrModal.classList.contains('visible')) return;
             e.preventDefault();
             for (let i = 0; i < e.changedTouches.length; i++) {
                 touches.delete(e.changedTouches[i].identifier);
@@ -162,6 +441,7 @@
         }, { passive: false });
 
         window.addEventListener('touchcancel', (e) => {
+            if (sheet.classList.contains('visible') || qrModal.classList.contains('visible')) return;
             e.preventDefault();
             for (let i = 0; i < e.changedTouches.length; i++) {
                 touches.delete(e.changedTouches[i].identifier);
@@ -169,19 +449,32 @@
             evaluateState();
         }, { passive: false });
 
+        // Evaluacion de estados y regla de reinicio ante cualquier cambio en N
         function evaluateState() {
-            const count = touches.size;
-            hint.style.opacity = count === 0 ? '1' : '0';
+            if (gameState === STATE.OUTCOME) return;
 
-            if (count >= 2) {
+            const currentCount = touches.size;
+            hint.style.opacity = currentCount === 0 ? '1' : '0';
+
+            if (currentCount >= 2) {
                 if (gameState === STATE.IDLE) {
+                    // Arranca la ronda
                     gameState = STATE.TENSION;
                     tensionStart = performance.now();
+                    playPop();
+                } else if (gameState === STATE.TENSION && currentCount !== previousFingerCount) {
+                    // Protocolo de justicia: si se agrega o quita un dedo, se reinicia a 3.0s
+                    tensionStart = performance.now();
+                    playAbortSound();
                 }
             } else {
+                if (gameState === STATE.TENSION) {
+                    playAbortSound();
+                }
                 gameState = STATE.IDLE;
-                loserId = null;
             }
+
+            previousFingerCount = currentCount;
         }
 
         // Bucle de renderizado continuo a 60 FPS
@@ -191,67 +484,158 @@
             if (gameState === STATE.TENSION) {
                 const elapsed = (now - tensionStart) / 1000;
                 if (elapsed >= 3.0) {
-                    // Seleccion aleatoria criptografica (CSPRNG)
+                    // Veredicto CSPRNG
                     const ids = Array.from(touches.keys());
                     const randomBuffer = new Uint32Array(1);
                     window.crypto.getRandomValues(randomBuffer);
                     const selectedIndex = randomBuffer[0] % ids.length;
                     loserId = ids[selectedIndex];
+                    frozenLoserPos = { ...touches.get(loserId) };
                     gameState = STATE.OUTCOME;
                     playOutcomeSound();
+
+                    // Abrir micro-hoja inferior (Action Sheet)
+                    setTimeout(() => {
+                        sheet.classList.add('visible');
+                    }, 400);
                 }
             }
 
-            // Dibujar aros alrededor de cada dedo
-            touches.forEach((pos, id) => {
-                let radius = 45;
-
-                if (gameState === STATE.TENSION) {
-                    const elapsed = (now - tensionStart) / 1000;
-                    const progress = Math.min(elapsed / 3.0, 1.0);
-                    const freq = 12 + (30 * progress);
-                    radius = 45 + Math.sin(elapsed * freq) * (5 * (1 - progress * 0.4));
-                } else if (gameState === STATE.OUTCOME) {
-                    radius = (id === loserId) ? 68 : 38;
-                }
-
+            // Dibujar aros
+            if (gameState === STATE.OUTCOME && frozenLoserPos) {
+                // Aro perdedor congelado en pantalla
                 ctx.save();
                 ctx.beginPath();
-                ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
+                ctx.arc(frozenLoserPos.x, frozenLoserPos.y, 68, 0, Math.PI * 2);
+                ctx.strokeStyle = '#FFFFFF';
+                ctx.lineWidth = 5;
+                ctx.shadowColor = '#FFFFFF';
+                ctx.shadowBlur = 18;
+                ctx.stroke();
 
-                if (gameState === STATE.OUTCOME && id === loserId) {
-                    // Aro del perdedor en titanio blanco brillante
-                    ctx.strokeStyle = '#FFFFFF';
-                    ctx.lineWidth = 5;
-                    ctx.shadowColor = '#FFFFFF';
-                    ctx.shadowBlur = 15;
-                    ctx.stroke();
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = 'bold 18px -apple-system, BlinkMacSystemFont, monospace';
+                ctx.textAlign = 'center';
+                ctx.shadowBlur = 0;
+                ctx.fillText('TÚ PAGAS', frozenLoserPos.x, frozenLoserPos.y - 88);
+                ctx.restore();
+            } else {
+                touches.forEach((pos, id) => {
+                    let radius = 45;
+                    if (gameState === STATE.TENSION) {
+                        const elapsed = (now - tensionStart) / 1000;
+                        const progress = Math.min(elapsed / 3.0, 1.0);
+                        const freq = 12 + (30 * progress);
+                        radius = 45 + Math.sin(elapsed * freq) * (5 * (1 - progress * 0.4));
+                    }
 
-                    // Etiqueta "TU PAGAS"
-                    ctx.fillStyle = '#FFFFFF';
-                    ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, monospace';
-                    ctx.textAlign = 'center';
-                    ctx.shadowBlur = 0;
-                    ctx.fillText('TÚ PAGAS', pos.x, pos.y - radius - 20);
-                } else {
-                    // Aros normales en titanio mate
-                    ctx.strokeStyle = (gameState === STATE.OUTCOME) ? 'rgba(58, 61, 69, 0.3)' : '#3A3D45';
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
+                    ctx.strokeStyle = '#3A3D45';
                     ctx.lineWidth = 3;
                     ctx.stroke();
-
-                    if (gameState === STATE.OUTCOME) {
-                        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-                        ctx.font = 'bold 12px -apple-system, BlinkMacSystemFont, monospace';
-                        ctx.textAlign = 'center';
-                        ctx.fillText('A SALVO', pos.x, pos.y - radius - 15);
-                    }
-                }
-                ctx.restore();
-            });
+                    ctx.restore();
+                });
+            }
 
             requestAnimationFrame(render);
         }
         requestAnimationFrame(render);
+
+        // Acciones de la Micro-Hoja (Action Sheet)
+        function selectChip(name) {
+            loserInput.value = name;
+        }
+
+        function saveDebt() {
+            const name = loserInput.value.trim() || 'Desconocido';
+            const amount = amountInput.value.trim() || '0.00';
+            
+            // Guardar en historial local
+            let debts = JSON.parse(localStorage.getItem('whopays_debts') || '[]');
+            debts.push({ name, amount, date: new Date().toISOString() });
+            localStorage.setItem('whopays_debts', JSON.stringify(debts));
+
+            dismissSheet();
+        }
+
+        function dismissSheet() {
+            sheet.classList.remove('visible');
+            loserInput.value = '';
+            amountInput.value = '';
+            gameState = STATE.IDLE;
+            loserId = null;
+            frozenLoserPos = null;
+            touches.clear();
+            evaluateState();
+        }
+
+        // Modo Mesa QR y Temporizador de 3 Minutos
+        let timerSeconds = 180;
+        let timerInterval = null;
+
+        function switchMode(mode) {
+            const btnLocal = document.getElementById('btn-mode-local');
+            const btnQr = document.getElementById('btn-mode-qr');
+
+            if (mode === 'qr') {
+                btnLocal.classList.remove('active');
+                btnQr.classList.add('active');
+                qrModal.classList.add('visible');
+
+                // Generar codigo QR dinamico con la URL actual
+                const roomUrl = window.location.origin + '/?room=7F2A';
+                qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(roomUrl);
+
+                startCountdown();
+            } else {
+                btnLocal.classList.add('active');
+                btnQr.classList.remove('active');
+                qrModal.classList.remove('visible');
+                clearInterval(timerInterval);
+            }
+        }
+
+        function startCountdown() {
+            clearInterval(timerInterval);
+            timerSeconds = 180;
+            updateTimerDisplay();
+
+            timerInterval = setInterval(() => {
+                timerSeconds--;
+                updateTimerDisplay();
+
+                // Cuenta sonora en los ultimos 10 segundos
+                if (timerSeconds <= 10 && timerSeconds > 3) {
+                    playTick(800);
+                } else if (timerSeconds <= 3 && timerSeconds > 0) {
+                    playTick(1200);
+                } else if (timerSeconds === 0) {
+                    playTick(150);
+                    clearInterval(timerInterval);
+                    document.getElementById('qr-status').innerText = 'Sesion Expirada (Memoria Liberada)';
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const m = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+            const s = (timerSeconds % 60).toString().padStart(2, '0');
+            timerBox.innerText = `${m}:${s}`;
+
+            // Gradiente Cromatico Dinamico (Apple HIG)
+            if (timerSeconds > 90) {
+                timerBox.style.color = '#30D158'; // Verde esmeralda
+                timerBox.style.borderColor = '#30D158';
+            } else if (timerSeconds > 30) {
+                timerBox.style.color = '#FFD60A'; // Amarillo ambar
+                timerBox.style.borderColor = '#FFD60A';
+            } else {
+                timerBox.style.color = '#FF453A'; // Rojo carmesi
+                timerBox.style.borderColor = '#FF453A';
+            }
+        }
     </script>
 </body>
 </html>
